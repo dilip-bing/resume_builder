@@ -16,7 +16,7 @@ st.set_page_config(page_title="Resume Builder - Enhanced Format", layout="wide",
 # Paths
 RESUME_CONTENT_JSON = "templates/resume_content.json"
 FORMAT_METADATA_JSON = "metadata/format_metadata.json"
-ORIGINAL_RESUME = r"C:\Users\dilip\OneDrive\Desktop\ResumeBuilder\reference_docx\resume_optimized_final.docx"
+ORIGINAL_RESUME = "reference_docx/resume_optimized_final.docx"
 
 # Load resume content (with file modification time for cache invalidation)
 @st.cache_data
