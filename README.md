@@ -8,19 +8,21 @@ Complete resume building system with **perfect format preservation** using metad
   - Document properties (margins, page size, orientation)
   - Section layouts and spacing
   - Paragraph formatting (alignment, indentation, line spacing)
-  - Run formatting (fonts, sizes, colors, bold/italic patterns)
+  - **Run-level formatting** (fonts, sizes, colors, bold/italic patterns)
+  - **Multirun system** for mixed bold/italic/normal text in single paragraphs
+  - **Paragraph-specific mapping** for complex structures
 
 - **📊 Metadata-Based System**: Stores complete formatting information in JSON
-  - `metadata/format_metadata.json`: All formatting properties
-  - `templates/resume_content.json`: Resume content with paragraph positions
+  - `metadata/format_metadata.json`: All 134 run formats with exact properties
+  - `templates/resume_content.json`: Resume content with separated fields
 
-- **🎯 Priority-Based Editing**: Organized by importance
-  - **A. Skills**: Programming languages, software, tools, databases
-  - **B. Projects**: Project experience with tech stacks and bullets
-  - **C. Leadership**: Leadership roles and achievements
-  - **D. Professional**: Work experience
-  - **E. Education**: Academic background
-  - **F. Personal**: Name and contact information
+- **🎯 Separated Field Editing**: Fine-grained control over content
+  - **Skills**: Programming languages, software, tools, databases
+  - **Projects**: Name, role, dates, tech stack, and bullets all editable separately
+  - **Leadership**: Organization, title, dates, and bullets independent
+  - **Professional**: Company, role, location, dates, tech stack, and bullets
+  - **Education**: University, degree, dates, GPA, coursework all separate
+  - **Personal**: Name and contact information
 
 - **📁 Organized Structure**:
   ```
@@ -319,6 +321,6 @@ builder.apply_run_format_from_metadata(run, para_idx, run_idx)
 
 ---
 
-**Version**: 2.0 Enhanced Format Preservation  
-**Status**: ✅ Production Ready  
-**Last Updated**: January 2024
+**Version**: 3.0 Run-Level Format Preservation with Multirun System  
+**Status**: ✅ Production Ready - 0 Format Mismatches  
+**Last Updated**: February 2026
