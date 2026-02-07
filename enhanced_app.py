@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from enhanced_format_system import EnhancedFormatBuilder
 from datetime import datetime
+from char_limiter import get_limiter
 
 # Page config
 st.set_page_config(page_title="Resume Builder - Enhanced Format", layout="wide", page_icon="📄")
@@ -37,6 +38,42 @@ if not Path(FORMAT_METADATA_JSON).exists():
     st.error(f"❌ Format metadata not found: {FORMAT_METADATA_JSON}")
     st.info("Run enhanced_format_system.py first to extract formatting metadata.")
     st.stop()
+
+# Initialize character limiter
+try:
+    char_limiter = get_limiter()
+except Exception as e:
+    st.warning(f"⚠️ Character limiter unavailable: {e}")
+    char_limiter = None
+
+# Helper function to display character counter
+def show_char_counter(prefix, current_text, field_key):
+    """Display adaptive character counter with visual feedback."""
+    if char_limiter is None:
+        return
+    
+    info = char_limiter.get_adaptive_limit(prefix, current_text)
+    
+    # Choose color based on remaining characters
+    if info['is_at_limit']:
+        color = "red"
+        icon = "🚫"
+    elif info['is_near_limit']:
+        color = "orange"
+        icon = "⚠️"
+    else:
+        color = "green"
+        icon = "✅"
+    
+    # Display counter
+    counter_text = f"{icon} **{info['remaining']}** characters remaining"
+    
+    # Add efficiency badge if applicable
+    if info['efficiency_gain'] > 0:
+        counter_text += f" _(+{info['efficiency_gain']} bonus!)_"
+    
+    # Show with appropriate color
+    st.markdown(f":{color}[{counter_text}]", unsafe_allow_html=True)
 
 # Title
 st.title("📄 Enhanced Resume Builder")
@@ -85,12 +122,17 @@ with tab_skills:
     with col1:
         if "languages" in skills_data:
             lang_data = skills_data["languages"]
+            prefix = f"{lang_data.get('label', 'Languages')}: "
+            
             languages = st.text_area(
                 "Programming Languages",
                 value=lang_data.get("value", ""),
                 height=80,
-                key="languages"
+                key="languages",
+                help="Comma-separated list of programming languages"
             )
+            show_char_counter(prefix, languages, "languages")
+            
             edited_data["skills"]["languages"] = {
                 "value": languages,
                 "label": lang_data.get("label", "Languages"),
@@ -99,12 +141,17 @@ with tab_skills:
         
         if "software" in skills_data:
             sw_data = skills_data["software"]
+            prefix = f"{sw_data.get('label', 'Software')}: "
+            
             software = st.text_area(
                 "Software & Frameworks",
                 value=sw_data.get("value", ""),
                 height=80,
-                key="software"
+                key="software",
+                help="Comma-separated list of software and frameworks"
             )
+            show_char_counter(prefix, software, "software")
+            
             edited_data["skills"]["software"] = {
                 "value": software,
                 "label": sw_data.get("label", "Software"),
@@ -114,12 +161,17 @@ with tab_skills:
     with col2:
         if "tools" in skills_data:
             tools_data = skills_data["tools"]
+            prefix = f"{tools_data.get('label', 'Tools')}: "
+            
             tools = st.text_area(
                 "Tools & Technologies",
                 value=tools_data.get("value", ""),
                 height=80,
-                key="tools"
+                key="tools",
+                help="Comma-separated list of tools and technologies"
             )
+            show_char_counter(prefix, tools, "tools")
+            
             edited_data["skills"]["tools"] = {
                 "value": tools,
                 "label": tools_data.get("label", "Tools"),
@@ -128,12 +180,17 @@ with tab_skills:
         
         if "databases" in skills_data:
             db_data = skills_data["databases"]
+            prefix = f"{db_data.get('label', 'Databases')}: "
+            
             databases = st.text_area(
                 "Databases",
                 value=db_data.get("value", ""),
                 height=80,
-                key="databases"
+                key="databases",
+                help="Comma-separated list of databases"
             )
+            show_char_counter(prefix, databases, "databases")
+            
             edited_data["skills"]["databases"] = {
                 "value": databases,
                 "label": db_data.get("label", "Databases"),
@@ -155,22 +212,28 @@ with tab_projects:
                 proj_name = st.text_input(
                     "Project Name",
                     value=project.get("name", ""),
-                    key=f"proj_{idx}_name"
+                    key=f"proj_{idx}_name",
+                    help="Full project name"
                 )
+                show_char_counter("", proj_name, f"proj_{idx}_name")
             
             with col2:
                 proj_role = st.text_input(
                     "Role/Team",
                     value=project.get("role", ""),
-                    key=f"proj_{idx}_role"
+                    key=f"proj_{idx}_role",
+                    help="e.g., Team Project, Personal Project"
                 )
+                show_char_counter("", proj_role, f"proj_{idx}_role")
             
             with col3:
                 proj_dates = st.text_input(
                     "Dates",
                     value=project.get("dates", ""),
-                    key=f"proj_{idx}_dates"
+                    key=f"proj_{idx}_dates",
+                    help="e.g., January 2019 - February 2019"
                 )
+                show_char_counter("", proj_dates, f"proj_{idx}_dates")
             
             # Store edited data
             edited_proj = {
@@ -186,8 +249,11 @@ with tab_projects:
                 tech_value = st.text_input(
                     "Tech Stack",
                     value=tech.get("value", ""),
-                    key=f"proj_{idx}_tech"
+                    key=f"proj_{idx}_tech",
+                    help="Technologies used in this project"
                 )
+                show_char_counter("", tech_value, f"proj_{idx}_tech")
+                
                 edited_proj["tech_stack"] = {
                     "value": tech_value,
                     "paragraph_index": tech.get("paragraph_index")
@@ -202,8 +268,11 @@ with tab_projects:
                     f"Bullet {bidx + 1}",
                     value=bullet.get("value", ""),
                     height=80,
-                    key=f"proj_{idx}_bullet_{bidx}"
+                    key=f"proj_{idx}_bullet_{bidx}",
+                    help="Project achievement or responsibility"
                 )
+                show_char_counter("• ", bullet_text, f"proj_{idx}_bullet_{bidx}")
+                
                 edited_bullets.append({
                     "value": bullet_text,
                     "paragraph_index": bullet.get("paragraph_index")
@@ -227,22 +296,28 @@ with tab_leadership:
                 org = st.text_input(
                     "Organization",
                     value=lead.get("organization", ""),
-                    key=f"lead_{idx}_org"
+                    key=f"lead_{idx}_org",
+                    help="Organization or club name"
                 )
+                show_char_counter("", org, f"lead_{idx}_org")
             
             with col2:
                 title = st.text_input(
                     "Title",
                     value=lead.get("title", ""),
-                    key=f"lead_{idx}_title"
+                    key=f"lead_{idx}_title",
+                    help="Your role or position"
                 )
+                show_char_counter("", title, f"lead_{idx}_title")
             
             with col3:
                 dates = st.text_input(
                     "Dates",
                     value=lead.get("dates", ""),
-                    key=f"lead_{idx}_dates"
+                    key=f"lead_{idx}_dates",
+                    help="Time period"
                 )
+                show_char_counter("", dates, f"lead_{idx}_dates")
             
             edited_lead = {
                 "organization": org,
@@ -260,8 +335,11 @@ with tab_leadership:
                     f"Bullet {bidx + 1}",
                     value=bullet.get("value", ""),
                     height=80,
-                    key=f"lead_{idx}_bullet_{bidx}"
+                    key=f"lead_{idx}_bullet_{bidx}",
+                    help="Leadership achievement or activity"
                 )
+                show_char_counter("• ", bullet_text, f"lead_{idx}_bullet_{bidx}")
+                
                 edited_bullets.append({
                     "value": bullet_text,
                     "paragraph_index": bullet.get("paragraph_index")
@@ -285,25 +363,35 @@ with tab_professional:
                 company = st.text_input(
                     "Company",
                     value=job.get("company", ""),
-                    key=f"job_{idx}_company"
+                    key=f"job_{idx}_company",
+                    help="Company name"
                 )
+                show_char_counter("", company, f"job_{idx}_company")
+                
                 job_title = st.text_input(
                     "Job Title",
                     value=job.get("role", ""),
-                    key=f"job_{idx}_title"
+                    key=f"job_{idx}_title",
+                    help="Your job title/role"
                 )
+                show_char_counter("", job_title, f"job_{idx}_title")
             
             with col2:
                 location = st.text_input(
                     "Location",
                     value=job.get("location", ""),
-                    key=f"job_{idx}_location"
+                    key=f"job_{idx}_location",
+                    help="City, State or Country"
                 )
+                show_char_counter("", location, f"job_{idx}_location")
+                
                 job_dates = st.text_input(
                     "Dates",
                     value=job.get("dates", ""),
-                    key=f"job_{idx}_dates"
+                    key=f"job_{idx}_dates",
+                    help="Employment period"
                 )
+                show_char_counter("", job_dates, f"job_{idx}_dates")
             
             edited_job = {
                 "company": company,
@@ -319,8 +407,11 @@ with tab_professional:
                 tech_value = st.text_input(
                     "Tech Stack",
                     value=tech.get("value", ""),
-                    key=f"job_{idx}_tech"
+                    key=f"job_{idx}_tech",
+                    help="Technologies used at this job"
                 )
+                show_char_counter("", tech_value, f"job_{idx}_tech")
+                
                 edited_job["tech_stack"] = {
                     "value": tech_value,
                     "paragraph_index": tech.get("paragraph_index")
@@ -335,8 +426,11 @@ with tab_professional:
                     f"Bullet {bidx + 1}",
                     value=bullet.get("value", ""),
                     height=80,
-                    key=f"job_{idx}_bullet_{bidx}"
+                    key=f"job_{idx}_bullet_{bidx}",
+                    help="Job duty or achievement"
                 )
+                show_char_counter("• ", bullet_text, f"job_{idx}_bullet_{bidx}")
+                
                 edited_bullets.append({
                     "value": bullet_text,
                     "paragraph_index": bullet.get("paragraph_index")
@@ -360,35 +454,45 @@ with tab_education:
                 university = st.text_input(
                     "University",
                     value=edu.get("university", ""),
-                    key=f"edu_{idx}_univ"
+                    key=f"edu_{idx}_univ",
+                    help="University name and location"
                 )
+                show_char_counter("", university, f"edu_{idx}_univ")
                 
                 degree = st.text_input(
                     "Degree",
                     value=edu.get("degree", ""),
-                    key=f"edu_{idx}_degree"
+                    key=f"edu_{idx}_degree",
+                    help="Degree title and major"
                 )
+                show_char_counter("", degree, f"edu_{idx}_degree")
                 
                 edu_dates = st.text_input(
                     "Dates",
                     value=edu.get("dates", ""),
-                    key=f"edu_{idx}_dates"
+                    key=f"edu_{idx}_dates",
+                    help="Graduation date or time period"
                 )
+                show_char_counter("", edu_dates, f"edu_{idx}_dates")
             
             with col2:
                 gpa_value = st.text_input(
                     "GPA",
                     value=edu.get("gpa", ""),
-                    key=f"edu_{idx}_gpa"
+                    key=f"edu_{idx}_gpa",
+                    help="GPA score (e.g., 3.67/4.00)"
                 )
+                show_char_counter("Cumulative GPA: ", gpa_value, f"edu_{idx}_gpa")
                 
                 coursework_str = "\n".join(edu.get("coursework", []))
                 coursework_value = st.text_area(
                     "Coursework",
                     value=coursework_str,
                     height=100,
-                    key=f"edu_{idx}_coursework"
+                    key=f"edu_{idx}_coursework",
+                    help="Relevant courses, comma-separated"
                 )
+                show_char_counter("Relevant Coursework: ", coursework_value, f"edu_{idx}_coursework")
             
             edited_edu = {
                 "university": university,
@@ -416,8 +520,11 @@ with tab_personal:
         name = st.text_input(
             "Full Name",
             value=name_data.get("value", ""),
-            key="name"
+            key="name",
+            help="Your full name as it appears on resume"
         )
+        show_char_counter("", name, "name")
+        
         edited_data["personal"]["name"] = {
             "value": name,
             "paragraph_index": name_data.get("paragraph_index")
@@ -431,13 +538,21 @@ with tab_personal:
         col1, col2 = st.columns(2)
         
         with col1:
-            location = st.text_input("Location", value=parts.get("location", ""), key="location")
-            phone = st.text_input("Phone", value=parts.get("phone", ""), key="phone")
-            email = st.text_input("Email", value=parts.get("email", ""), key="email")
+            location = st.text_input("Location", value=parts.get("location", ""), key="location", help="City, State")
+            show_char_counter("", location, "location")
+            
+            phone = st.text_input("Phone", value=parts.get("phone", ""), key="phone", help="Phone number")
+            show_char_counter("", phone, "phone")
+            
+            email = st.text_input("Email", value=parts.get("email", ""), key="email", help="Email address")
+            show_char_counter("", email, "email")
         
         with col2:
-            linkedin = st.text_input("LinkedIn", value=parts.get("linkedin", ""), key="linkedin")
-            portfolio = st.text_input("Portfolio", value=parts.get("portfolio", ""), key="portfolio")
+            linkedin = st.text_input("LinkedIn", value=parts.get("linkedin", ""), key="linkedin", help="LinkedIn URL or username")
+            show_char_counter("", linkedin, "linkedin")
+            
+            portfolio = st.text_input("Portfolio", value=parts.get("portfolio", ""), key="portfolio", help="Portfolio URL")
+            show_char_counter("", portfolio, "portfolio")
         
         edited_data["personal"]["contact_line"] = {
             "paragraph_index": contact_data.get("paragraph_index"),

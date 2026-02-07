@@ -1,5 +1,6 @@
 streamlit
 python-docx
+Pillow
 openai
 langchain
 langchain-openai
