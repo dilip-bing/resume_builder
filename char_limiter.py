@@ -97,24 +97,55 @@ class AdaptiveCharLimiter:
         
         return initial_limit
     
-    def get_adaptive_limit(self, prefix="", current_text=""):
+    def detect_num_lines(self, prefix="", original_text=""):
+        """
+        Detect how many lines the original text spans.
+        
+        Args:
+            prefix: Fixed prefix
+            original_text: Original text from resume
+        
+        Returns:
+            int: Number of lines the text spans
+        """
+        if not original_text:
+            return 1
+        
+        prefix_width = self.get_text_width(prefix) if prefix else 0
+        text_width = self.get_text_width(original_text)
+        total_width = prefix_width + text_width
+        
+        # Calculate number of lines (ceiling division)
+        num_lines = (total_width + self.LINE_WIDTH_PIXELS - 1) // self.LINE_WIDTH_PIXELS
+        return max(1, num_lines)  # At least 1 line
+    
+    def get_adaptive_limit(self, prefix="", current_text="", original_text="", num_lines=None):
         """
         Get adaptive character limit based on what user has typed.
         
         Args:
             prefix: Fixed prefix (e.g., "Languages: ")
             current_text: What user has typed so far
+            original_text: Original text from resume (for multi-line detection)
+            num_lines: Number of lines to allow (auto-detected if None)
         
         Returns:
             dict with limit info
         """
+        # Auto-detect number of lines if not specified
+        if num_lines is None:
+            num_lines = self.detect_num_lines(prefix, original_text or current_text)
+        
+        # Calculate total available width (multiple lines)
+        total_line_width = self.LINE_WIDTH_PIXELS * num_lines
+        
         # Calculate actual width used
         prefix_width = self.get_text_width(prefix) if prefix else 0
         user_text_width = self.get_text_width(current_text) if current_text else 0
         total_width_used = prefix_width + user_text_width
         
         # Calculate remaining pixel space
-        pixels_available = self.LINE_WIDTH_PIXELS - total_width_used
+        pixels_available = total_line_width - total_width_used
         
         # Calculate remaining characters (conservative)
         remaining_chars = int(pixels_available / self.widest_char_width)
@@ -123,7 +154,7 @@ class AdaptiveCharLimiter:
         current_limit = len(current_text) + remaining_chars
         
         # Calculate efficiency
-        initial_limit = self.get_initial_limit(prefix)
+        initial_limit = self.get_initial_limit(prefix) * num_lines
         efficiency_gain = current_limit - initial_limit
         
         return {
@@ -131,12 +162,13 @@ class AdaptiveCharLimiter:
             'remaining': remaining_chars,
             'pixels_used': int(total_width_used),
             'pixels_available': int(pixels_available),
-            'total_pixels': self.LINE_WIDTH_PIXELS,
-            'percentage_used': (total_width_used / self.LINE_WIDTH_PIXELS) * 100,
+            'total_pixels': total_line_width,
+            'percentage_used': (total_width_used / total_line_width) * 100,
             'efficiency_gain': efficiency_gain,
             'chars_typed': len(current_text),
             'is_near_limit': remaining_chars < 10,
-            'is_at_limit': remaining_chars <= 0
+            'is_at_limit': remaining_chars <= 0,
+            'num_lines': num_lines
         }
     
     def get_field_limits(self, resume_content):
@@ -209,19 +241,21 @@ def get_limiter():
     return _limiter
 
 
-def calculate_limit(prefix="", current_text=""):
+def calculate_limit(prefix="", current_text="", original_text="", num_lines=None):
     """
     Quick helper to calculate limit.
     
     Args:
         prefix: Fixed prefix text
         current_text: Current user text
+        original_text: Original text from resume (for multi-line detection)
+        num_lines: Number of lines to allow (auto-detected if None)
     
     Returns:
         dict: Limit information
     """
     limiter = get_limiter()
-    return limiter.get_adaptive_limit(prefix, current_text)
+    return limiter.get_adaptive_limit(prefix, current_text, original_text, num_lines)
 
 
 if __name__ == "__main__":

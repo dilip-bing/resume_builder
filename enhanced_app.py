@@ -47,12 +47,19 @@ except Exception as e:
     char_limiter = None
 
 # Helper function to display character counter
-def show_char_counter(prefix, current_text, field_key):
-    """Display adaptive character counter with visual feedback."""
+def show_char_counter(prefix, current_text, field_key, original_text=""):
+    """Display adaptive character counter with visual feedback.
+    
+    Args:
+        prefix: Fixed prefix (e.g., "Languages: ")
+        current_text: Current user input
+        field_key: Unique field identifier
+        original_text: Original text from resume (for multi-line detection)
+    """
     if char_limiter is None:
         return
     
-    info = char_limiter.get_adaptive_limit(prefix, current_text)
+    info = char_limiter.get_adaptive_limit(prefix, current_text, original_text)
     
     # Choose color based on remaining characters
     if info['is_at_limit']:
@@ -68,8 +75,12 @@ def show_char_counter(prefix, current_text, field_key):
     # Display counter
     counter_text = f"{icon} **{info['remaining']}** characters remaining"
     
+    # Add multi-line indicator if applicable
+    if info['num_lines'] > 1:
+        counter_text += f" _(spanning {info['num_lines']} lines)_"
+    
     # Add efficiency badge if applicable
-    if info['efficiency_gain'] > 0:
+    elif info['efficiency_gain'] > 0:
         counter_text += f" _(+{info['efficiency_gain']} bonus!)_"
     
     # Show with appropriate color
@@ -264,14 +275,15 @@ with tab_projects:
             edited_bullets = []
             
             for bidx, bullet in enumerate(bullets):
+                original_bullet = bullet.get("value", "")
                 bullet_text = st.text_area(
                     f"Bullet {bidx + 1}",
-                    value=bullet.get("value", ""),
+                    value=original_bullet,
                     height=80,
                     key=f"proj_{idx}_bullet_{bidx}",
                     help="Project achievement or responsibility"
                 )
-                show_char_counter("• ", bullet_text, f"proj_{idx}_bullet_{bidx}")
+                show_char_counter("• ", bullet_text, f"proj_{idx}_bullet_{bidx}", original_bullet)
                 
                 edited_bullets.append({
                     "value": bullet_text,
@@ -331,14 +343,15 @@ with tab_leadership:
             edited_bullets = []
             
             for bidx, bullet in enumerate(bullets):
+                original_bullet_text = bullet.get("value", "")
                 bullet_text = st.text_area(
                     f"Bullet {bidx + 1}",
-                    value=bullet.get("value", ""),
+                    value=original_bullet_text,
                     height=80,
                     key=f"lead_{idx}_bullet_{bidx}",
                     help="Leadership achievement or activity"
                 )
-                show_char_counter("• ", bullet_text, f"lead_{idx}_bullet_{bidx}")
+                show_char_counter("• ", bullet_text, f"lead_{idx}_bullet_{bidx}", original_bullet_text)
                 
                 edited_bullets.append({
                     "value": bullet_text,
@@ -422,14 +435,15 @@ with tab_professional:
             edited_bullets = []
             
             for bidx, bullet in enumerate(bullets):
+                original_bullet_text = bullet.get("value", "")
                 bullet_text = st.text_area(
                     f"Bullet {bidx + 1}",
-                    value=bullet.get("value", ""),
+                    value=original_bullet_text,
                     height=80,
                     key=f"job_{idx}_bullet_{bidx}",
                     help="Job duty or achievement"
                 )
-                show_char_counter("• ", bullet_text, f"job_{idx}_bullet_{bidx}")
+                show_char_counter("• ", bullet_text, f"job_{idx}_bullet_{bidx}", original_bullet_text)
                 
                 edited_bullets.append({
                     "value": bullet_text,
