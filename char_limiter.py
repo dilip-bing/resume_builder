@@ -27,26 +27,39 @@ class AdaptiveCharLimiter:
         self._calculate_char_widths()
     
     def _load_font(self):
-        """Load Times New Roman font."""
+        """Load Times New Roman font or similar serif font."""
         try:
             font_size_pixels = int((self.FONT_SIZE * self.DPI) / 72)
             
-            # Try Windows font paths
+            # Try multiple font paths (Windows and Linux)
             font_paths = [
+                # Windows - Times New Roman
                 r'C:\Windows\Fonts\times.ttf',
                 r'C:\Windows\Fonts\timesnewroman.ttf',
                 r'C:\Windows\Fonts\Times New Roman.ttf',
+                # Linux - Liberation Serif (very similar to Times New Roman)
+                '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+                '/usr/share/fonts/truetype/liberation2/LiberationSerif-Regular.ttf',
+                # Linux - DejaVu Serif (fallback)
+                '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
+                # macOS
+                '/Library/Fonts/Times New Roman.ttf',
+                '/System/Library/Fonts/Times.ttc',
             ]
             
             for path in font_paths:
                 if os.path.exists(path):
-                    return ImageFont.truetype(path, font_size_pixels)
+                    font = ImageFont.truetype(path, font_size_pixels)
+                    print(f"✓ Loaded font: {path}")
+                    return font
             
-            # Fallback
+            # Fallback - use default font and warn
+            print("⚠️ Warning: Could not find Times New Roman or Liberation Serif")
+            print("   Using default font - character limits may be less accurate")
             return ImageFont.load_default()
             
         except Exception as e:
-            print(f"Font loading warning: {e}, using default font")
+            print(f"⚠️ Font loading warning: {e}, using default font")
             return ImageFont.load_default()
     
     def _calculate_char_widths(self):
