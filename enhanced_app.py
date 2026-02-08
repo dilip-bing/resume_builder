@@ -413,56 +413,69 @@ with tab_ai:
             col1, col2, col3 = st.columns(3)
             with col1:
                 # Generate Resume PDF button - always available
-                if st.button("📄 Regenerate Resume PDF", use_container_width=True, type="secondary"):
+                if st.button("📄 Regenerate Resume PDF", use_container_width=True, type="secondary", key="regen_pdf_btn"):
                     with st.spinner("Generating resume PDF..."):
                         # Priority order: applied_content > optimized_content > file
                         # This ensures it works on both local and Streamlit Cloud
                         if 'applied_content' in st.session_state:
                             content_to_use = st.session_state['applied_content']
-                            print("[DEBUG] Using applied_content from session state (after Apply clicked)")
-                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                            source = "applied_content (after Apply)"
                         elif 'optimized_content' in st.session_state:
                             content_to_use = st.session_state['optimized_content']
-                            print("[DEBUG] Using optimized_content from session state (before Apply)")
-                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                            source = "optimized_content (before Apply)"
                         else:
                             # Clear cache and reload from file
                             load_resume_content.clear()
                             with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
                                 content_to_use = json.load(f)
-                            print("[DEBUG] Reloaded from file (cache cleared)")
-                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                            source = "file (no optimization)"
                         
                         try:
-                            # Create output directory
-                            output_dir = Path("output/generated_resumes")
-                            output_dir.mkdir(parents=True, exist_ok=True)
-                            
-                            # Generate filename with timestamp
+                            # Generate timestamp for unique filename
                             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                            output_file = output_dir / f"resume_optimized_{timestamp}.docx"
                             
-                            print(f"[DEBUG] Building resume with content_to_use type: {type(content_to_use)}")
+                            # Show what content is being used
+                            skills_preview = content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')
+                            print(f"[PDF GENERATION] Source: {source}")
+                            print(f"[PDF GENERATION] Skills.languages: {skills_preview[:80]}...")
+                            
+                            st.info(f"📝 Using content from: **{source}**")
+                            
+                            # Create temp file for generation
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                                temp_path = tmp_file.name
                             
                             # Build resume using EnhancedFormatBuilder
                             builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
-                            result = builder.build_resume_from_json(content_to_use, str(output_file))
+                            result = builder.build_resume_from_json(content_to_use, temp_path)
+                            
+                            # Read the generated file into memory
+                            with open(result, "rb") as f:
+                                resume_bytes = f.read()
+                            
+                            # Clean up temp file
+                            try:
+                                Path(temp_path).unlink()
+                            except:
+                                pass
                             
                             # Show success with download button
                             st.success(f"✅ Resume generated successfully!")
                             
-                            # Provide download button
-                            with open(result, "rb") as f:
-                                st.download_button(
-                                    label="⬇️ Download Resume",
-                                    data=f,
-                                    file_name=f"resume_optimized_{timestamp}.docx",
-                                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                    use_container_width=True,
-                                    key="download_optimized_resume"
-                                )
+                            # Provide download button with in-memory data
+                            st.download_button(
+                                label="⬇️ Download Resume",
+                                data=resume_bytes,
+                                file_name=f"resume_optimized_{timestamp}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                use_container_width=True,
+                                key=f"download_optimized_{timestamp}"
+                            )
                         except Exception as e:
                             st.error(f"❌ Error generating resume: {str(e)}")
+                            import traceback
+                            st.code(traceback.format_exc())
             
             with col2:
                 # Download optimized JSON
@@ -1029,24 +1042,22 @@ with col2:
     if st.button("🚀 Generate Resume", type="primary", use_container_width=True):
         with st.spinner("Generating resume with enhanced format preservation..."):
             try:
-                # Create output directory
-                output_dir = Path("output/generated_resumes")
-                output_dir.mkdir(parents=True, exist_ok=True)
-                
-                # Generate filename with timestamp
+                # Generate timestamp for unique filename
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                output_file = output_dir / f"resume_{timestamp}.docx"
                 
                 # Priority: Use applied AI optimization if available, else reload from file
                 # This ensures AI optimizations work on Streamlit Cloud (read-only filesystem)
                 if 'applied_content' in st.session_state:
                     current_resume_data = st.session_state['applied_content']
-                    print("[DEBUG] Generate Resume: Using applied_content from session state")
+                    source = "applied_content (AI optimized)"
                 else:
                     # Reload resume_content.json to get latest changes
                     with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
                         current_resume_data = json.load(f)
-                    print("[DEBUG] Generate Resume: Loaded from file")
+                    source = "file (manual edits)"
+                
+                print(f"[GENERATE] Source: {source}")
+                st.info(f"📝 Using content from: **{source}**")
                 
                 # Merge with edited_data from tabs (edited_data takes precedence)
                 # This ensures both tab edits and AI optimizations are included
@@ -1066,23 +1077,37 @@ with col2:
                 if edited_data.get("leadership"):
                     final_data["leadership"] = edited_data["leadership"]
                 
+                # Create temp file for generation
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                    temp_path = tmp_file.name
+                
                 # Build resume
                 builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
-                result = builder.build_resume_from_json(final_data, str(output_file))
+                result = builder.build_resume_from_json(final_data, temp_path)
+                
+                # Read the generated file into memory
+                with open(result, "rb") as f:
+                    resume_bytes = f.read()
+                
+                # Clean up temp file
+                try:
+                    Path(temp_path).unlink()
+                except:
+                    pass
                 
                 # Success
                 st.success(f"✅ Resume generated successfully!")
-                st.info(f"📁 **Saved to:** `{result}`")
                 
-                # Download button
-                with open(result, 'rb') as f:
-                    st.download_button(
-                        label="⬇️ Download Resume",
-                        data=f,
-                        file_name=f"resume_{timestamp}.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True
-                    )
+                # Download button with in-memory data
+                st.download_button(
+                    label="⬇️ Download Resume",
+                    data=resume_bytes,
+                    file_name=f"resume_{timestamp}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                    key=f"download_resume_{timestamp}"
+                )
                 
             except Exception as e:
                 st.error(f"❌ Error generating resume: {str(e)}")
