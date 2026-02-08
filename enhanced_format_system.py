@@ -134,14 +134,14 @@ class FormatMetadata:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(cleaned_metadata, f, indent=2, ensure_ascii=False)
         
-        print(f"✅ Saved format metadata: {output_path}")
+        print(f"[OK] Saved format metadata: {output_path}")
         self.print_metadata_summary(cleaned_metadata)
         
         return output_path
     
     def print_metadata_summary(self, metadata: Dict[str, Any]):
         """Print summary of extracted metadata."""
-        print(f"\n📊 Format Metadata Summary:")
+        print(f"\n[METADATA SUMMARY]:")
         print(f"   Document: {metadata['source_document']}")
         print(f"   Paragraphs with formatting: {len(metadata['paragraph_formats'])}")
         print(f"   Total run formats: {sum(len(runs) for runs in metadata['run_formats'].values())}")
@@ -166,7 +166,7 @@ class EnhancedFormatBuilder:
         with open(metadata_path, 'r', encoding='utf-8') as f:
             self.format_metadata = json.load(f)
         
-        print(f"✅ Loaded format metadata from: {metadata_path}")
+        print(f"[OK] Loaded format metadata from: {metadata_path}")
     
     def apply_section_properties(self, target_doc: Document):
         """Apply section properties from metadata."""
@@ -323,6 +323,15 @@ class EnhancedFormatBuilder:
     
     def replace_skill_line_with_metadata(self, para_idx: int, label: str, value: str, target_doc: Document):
         """Replace skill line using stored metadata for exact formatting."""
+        # Skip if para_idx is None or invalid (field doesn't exist in original template)
+        if para_idx is None:
+            print(f"   [WARNING] Skipping skill field '{label}' - no metadata found (not in original template)")
+            return
+        
+        if para_idx >= len(target_doc.paragraphs):
+            print(f"   [WARNING] Skipping skill field '{label}' - paragraph index {para_idx} out of range")
+            return
+        
         target_para = target_doc.paragraphs[para_idx]
         
         # Clear runs
@@ -354,15 +363,36 @@ class EnhancedFormatBuilder:
         """
         Build resume using format metadata for perfect replication.
         """
+        # DEBUG: Log what skills we're receiving
+        if 'skills' in json_data:
+            print("\n" + "="*70)
+            print("[FORMAT_BUILDER] Received skills data:")
+            print("="*70)
+            for skill_key, skill_data in json_data['skills'].items():
+                if isinstance(skill_data, dict) and 'value' in skill_data:
+                    print(f"  {skill_key}: {skill_data['value'][:80]}...")
+                else:
+                    print(f"  {skill_key}: {str(skill_data)[:80]}...")
+            print("="*70 + "\n")
+        
         # Ensure output directory exists
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         
         # Copy original
         shutil.copy2(self.original_resume_path, output_path)
-        print(f"✅ Copied original to: {output_path}")
+        print(f"[OK] Copied original to: {output_path}")
         
         # Open and apply metadata-driven formatting
         target_doc = Document(output_path)
+        
+        # Clean up any unauthorized skill fields before processing
+        if 'skills' in json_data and isinstance(json_data['skills'], dict):
+            allowed_skill_fields = {'languages', 'software', 'tools'}
+            unauthorized_fields = [k for k in json_data['skills'].keys() if k not in allowed_skill_fields]
+            if unauthorized_fields:
+                print(f"[WARNING] Removing unauthorized skill fields from data: {unauthorized_fields}")
+                for field in unauthorized_fields:
+                    del json_data['skills'][field]
         
         # Apply section properties
         self.apply_section_properties(target_doc)
@@ -469,9 +499,22 @@ class EnhancedFormatBuilder:
         
         # Skills
         for skill_key, skill_data in json_data.get("skills", {}).items():
+            # Skip if this is not a dict with required metadata
+            if not isinstance(skill_data, dict):
+                print(f"   [WARNING] Skipping skill field '{skill_key}' - invalid data format")
+                continue
+            
+            # Skip if no paragraph_index (unauthorized field not in original template)
+            if "paragraph_index" not in skill_data or skill_data["paragraph_index"] is None:
+                print(f"   [WARNING] Skipping skill field '{skill_key}' - no paragraph_index (unauthorized field)")
+                continue
+            
             para_idx = skill_data["paragraph_index"]
-            label = skill_data["label"]
-            value = skill_data["value"]
+            label = skill_data.get("label", skill_key.title())
+            value = skill_data.get("value", "")
+            
+            print(f"   [APPLYING] {skill_key} → para {para_idx}: {value[:80]}...")
+            
             self.replace_skill_line_with_metadata(para_idx, label, value, target_doc)
             changes.append(f"SKILL_{skill_key.upper()} (para {para_idx})")
         
@@ -499,11 +542,19 @@ class EnhancedFormatBuilder:
             
             if "tech_stack" in job and job["tech_stack"]:
                 tech_data = job["tech_stack"]
+                # Skip if no valid paragraph_index
+                if not isinstance(tech_data, dict) or "paragraph_index" not in tech_data or tech_data["paragraph_index"] is None:
+                    print(f"   [WARNING] Skipping professional tech_stack - no valid paragraph_index")
+                    continue
                 para_idx = tech_data["paragraph_index"]
                 self.replace_skill_line_with_metadata(para_idx, "Tech Stack", tech_data["value"], target_doc)
                 changes.append(f"PROF_TECH (para {para_idx})")
             
             for bullet in job.get("bullets", []):
+                # Skip if bullet doesn't have valid paragraph_index
+                if not isinstance(bullet, dict) or "paragraph_index" not in bullet or bullet["paragraph_index"] is None:
+                    print(f"   [WARNING] Skipping professional bullet - no valid paragraph_index")
+                    continue
                 para_idx = bullet["paragraph_index"]
                 self.replace_paragraph_with_metadata(para_idx, bullet["value"], target_doc)
                 changes.append(f"PROF_BULLET (para {para_idx})")
@@ -570,6 +621,10 @@ class EnhancedFormatBuilder:
             
             if "tech_stack" in proj and proj["tech_stack"]:
                 tech_data = proj["tech_stack"]
+                # Skip if no valid paragraph_index
+                if not isinstance(tech_data, dict) or "paragraph_index" not in tech_data or tech_data["paragraph_index"] is None:
+                    print(f"   [WARNING] Skipping project tech_stack - no valid paragraph_index")
+                    continue
                 para_idx = tech_data["paragraph_index"]
                 # For projects, entire Tech Stack line is italic (including label)
                 # Use run 0 (italic) for entire text
@@ -578,6 +633,10 @@ class EnhancedFormatBuilder:
                 changes.append(f"PROJ_TECH (para {para_idx})")
             
             for bullet in proj.get("bullets", []):
+                # Skip if bullet doesn't have valid paragraph_index
+                if not isinstance(bullet, dict) or "paragraph_index" not in bullet or bullet["paragraph_index"] is None:
+                    print(f"   [WARNING] Skipping project bullet - no valid paragraph_index")
+                    continue
                 para_idx = bullet["paragraph_index"]
                 self.replace_paragraph_with_metadata(para_idx, bullet["value"], target_doc)
                 changes.append(f"PROJ_BULLET (para {para_idx})")
@@ -613,6 +672,10 @@ class EnhancedFormatBuilder:
                 changes.append(f"LEAD_HEADER (para {para_idx})")
             
             for bullet in lead.get("bullets", []):
+                # Skip if bullet doesn't have valid paragraph_index
+                if not isinstance(bullet, dict) or "paragraph_index" not in bullet or bullet["paragraph_index"] is None:
+                    print(f"   [WARNING] Skipping leadership bullet - no valid paragraph_index")
+                    continue
                 para_idx = bullet["paragraph_index"]
                 self.replace_paragraph_with_metadata(para_idx, bullet["value"], target_doc)
                 changes.append(f"LEAD_BULLET (para {para_idx})")
@@ -620,8 +683,8 @@ class EnhancedFormatBuilder:
         # Save
         target_doc.save(output_path)
         
-        print(f"\n✅ Resume generated: {output_path}")
-        print(f"📊 Edits applied: {len(changes)}")
+        print(f"\n[OK] Resume generated: {output_path}")
+        print(f"[STATS] Edits applied: {len(changes)}")
         print(f"🎨 Format applied from metadata (margins, spacing, fonts, ALL properties)")
         
         return output_path
@@ -651,6 +714,6 @@ if __name__ == '__main__':
     builder = EnhancedFormatBuilder(original_path, "metadata/format_metadata.json")
     output = builder.build_resume_from_json(resume_json, "output/test_metadata_output.docx")
     
-    print(f"\n✅ Test complete!")
+    print(f"\n[OK] Test complete!")
     print(f"📁 Output: {output}")
     print(f"📁 Metadata: metadata/format_metadata.json")

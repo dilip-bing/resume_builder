@@ -50,16 +50,16 @@ class AdaptiveCharLimiter:
             for path in font_paths:
                 if os.path.exists(path):
                     font = ImageFont.truetype(path, font_size_pixels)
-                    print(f"✓ Loaded font: {path}")
+                    print(f"[OK] Loaded font: {path}")
                     return font
             
             # Fallback - use default font and warn
-            print("⚠️ Warning: Could not find Times New Roman or Liberation Serif")
+            print("[WARNING] Could not find Times New Roman or Liberation Serif")
             print("   Using default font - character limits may be less accurate")
             return ImageFont.load_default()
             
         except Exception as e:
-            print(f"⚠️ Font loading warning: {e}, using default font")
+            print(f"[WARNING] Font loading warning: {e}, using default font")
             return ImageFont.load_default()
     
     def _calculate_char_widths(self):
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     
     info = limiter.get_adaptive_limit(prefix, test_text)
     
-    print(f"\n📊 Results:")
+    print(f"\n[RESULTS]:")
     print(f"  Pixels used: {info['pixels_used']} / {info['total_pixels']}")
     print(f"  Percentage used: {info['percentage_used']:.1f}%")
     print(f"  Characters remaining: {info['remaining']}")
@@ -297,6 +297,6 @@ if __name__ == "__main__":
     print(f"  Efficiency gain: +{info['efficiency_gain']} chars")
     
     if info['is_near_limit']:
-        print(f"\n⚠️  WARNING: Near character limit!")
+        print(f"\n[WARNING]: Near character limit!")
     
     print("\n" + "="*70)

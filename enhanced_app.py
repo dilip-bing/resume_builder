@@ -10,11 +10,20 @@ from enhanced_format_system import EnhancedFormatBuilder
 from datetime import datetime
 from char_limiter import get_limiter
 
+# Conditional import for AI optimizer (only if package installed)
+try:
+    from gemini_optimizer import get_optimizer, calculate_text_preservation
+    GEMINI_AVAILABLE = True
+except ImportError as e:
+    GEMINI_AVAILABLE = False
+    GEMINI_IMPORT_ERROR = str(e)
+
 # Page config
 st.set_page_config(page_title="Resume Builder - Enhanced Format", layout="wide", page_icon="📄")
 
 # Paths
-RESUME_CONTENT_JSON = "templates/resume_content.json"
+RESUME_CONTENT_TEMPLATE = "templates/resume_content_template.json"  # Fixed original (never modified)
+RESUME_CONTENT_JSON = "templates/resume_content.json"  # Working copy (modified by AI)
 FORMAT_METADATA_JSON = "metadata/format_metadata.json"
 ORIGINAL_RESUME = "reference_docx/resume_optimized_final.docx"
 
@@ -24,12 +33,23 @@ def load_resume_content(file_mtime):
     with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+def reset_to_template():
+    """Reset working copy from fixed template"""
+    import shutil
+    shutil.copy(RESUME_CONTENT_TEMPLATE, RESUME_CONTENT_JSON)
+    print(f"[RESET] Copied template to working copy")
+
 try:
+    # Ensure working copy exists
+    if not Path(RESUME_CONTENT_JSON).exists():
+        print("[INIT] Creating working copy from template...")
+        reset_to_template()
+    
     # Force reload if file changed
     file_mtime = Path(RESUME_CONTENT_JSON).stat().st_mtime
     resume_data = load_resume_content(file_mtime)
 except FileNotFoundError:
-    st.error(f"❌ Resume content not found: {RESUME_CONTENT_JSON}")
+    st.error(f"❌ Template not found: {RESUME_CONTENT_TEMPLATE}")
     st.info("Run extract_to_json.py first to extract content from your resume.")
     st.stop()
 
@@ -101,14 +121,15 @@ with st.sidebar:
     st.header("📁 Output Location")
     st.write("Generated resumes save to:\n`output/generated_resumes/`")
 
-# Priority tabs
-tab_skills, tab_projects, tab_leadership, tab_professional, tab_education, tab_personal = st.tabs([
-    "🔧 A. Skills",
-    "💼 B. Projects",
-    "👥 C. Leadership",
-    "🏢 D. Professional",
-    "🎓 E. Education",
-    "👤 F. Personal"
+# Priority tabs - AI Optimization moved to first position
+tab_ai, tab_skills, tab_projects, tab_leadership, tab_professional, tab_education, tab_personal = st.tabs([
+    "🤖 A. AI Optimization",
+    "🔧 B. Skills",
+    "💼 C. Projects",
+    "👥 D. Leadership",
+    "🏢 E. Professional",
+    "🎓 F. Education",
+    "👤 G. Personal"
 ])
 
 # Initialize edited data
@@ -121,10 +142,391 @@ edited_data = {
     "leadership": []
 }
 
-# A. SKILLS TAB
+# A. AI OPTIMIZATION TAB (moved to first position)
+with tab_ai:
+    st.header("🤖 AI-Powered ATS Optimization")
+    st.markdown("""
+    **Optimize your resume for Applicant Tracking Systems (ATS)**
+    
+    This feature uses Google Gemini AI to:
+    - ✅ Extract keywords from job descriptions
+    - ✅ Add relevant terms naturally to your resume
+    - ✅ Maintain 70-80% of your original text
+    - ✅ Target 95%+ ATS keyword match
+    - ✅ **Aggressively optimize Skills and Tech Stacks**
+    """)
+    
+    # Check if package is installed
+    if not GEMINI_AVAILABLE:
+        st.error("❌ Google Generative AI package not installed")
+        st.info("""
+        **Installation Required:**
+        
+        Run this command in your terminal:
+        ```bash
+        pip install google-generativeai
+        ```
+        
+        Or if using virtual environment:
+        ```bash
+        .venv/Scripts/python.exe -m pip install google-generativeai
+        ```
+        
+        Then restart the app.
+        """)
+        st.stop()
+    
+    # Check if API key is configured
+    try:
+        optimizer = get_optimizer()
+        api_configured = True
+    except ValueError as e:
+        api_configured = False
+        st.error("❌ " + str(e))
+        st.info("""
+        **Setup Instructions:**
+        1. Get your API key from https://makersuite.google.com/app/apikey
+        2. Open `.streamlit/secrets.toml`
+        3. Replace `paste-your-api-key-here` with your actual key
+        4. Restart the app
+        
+        For detailed instructions, see `GEMINI_API_SETUP.md`
+        """)
+    except ImportError as e:
+        api_configured = False
+        st.error("❌ Package installation issue: " + str(e))
+        st.info("Try reinstalling: `pip install --upgrade google-generativeai`")
+    
+    if api_configured:
+        st.success("✅ Gemini Pro 2.5 configured and ready (Advanced reasoning model)")
+        
+        # Check if there are existing optimization results in session state
+        if 'optimization_done' in st.session_state and st.session_state['optimization_done']:
+            st.info("ℹ️ **Previous optimization results available**")
+            if st.button("🔄 Start New Optimization", type="secondary"):
+                # Clear session state
+                del st.session_state['optimization_done']
+                del st.session_state['optimized_content']
+                del st.session_state['optimization_report']
+                st.rerun()
+        
+        # Job description input
+        st.markdown("### 📋 Step 1: Paste Job Description")
+        job_description = st.text_area(
+            "Paste the complete job posting here:",
+            height=250,
+            placeholder="Paste the full job description including requirements, responsibilities, and qualifications...",
+            help="The more complete the job description, the better the optimization"
+        )
+        
+        # Optimization button
+        st.markdown("### 🎯 Step 2: Optimize Resume")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            optimize_button = st.button(
+                "🚀 Optimize Resume for ATS",
+                type="primary",
+                use_container_width=True,
+                disabled=not job_description.strip()
+            )
+        
+        # Run optimization if button clicked
+        if optimize_button and job_description.strip():
+            with st.spinner("🤖 Analyzing job description and optimizing resume..."):
+                try:
+                    st.write("📝 **Starting AI optimization...**")
+                    
+                    # Run optimization
+                    optimized_content, report = optimizer.optimize_resume(
+                        job_description,
+                        resume_data
+                    )
+                    
+                    # Store in session state so it persists after rerun
+                    st.session_state['optimized_content'] = optimized_content
+                    st.session_state['optimization_report'] = report
+                    st.session_state['optimization_done'] = True
+                    
+                    st.success("✅ **AI optimization complete!**")
+                    
+                except Exception as e:
+                    st.error(f"❌ Optimization Error: {str(e)}")
+                    st.exception(e)
+        elif optimize_button:
+            st.warning("⚠️ Please paste a job description first")
+        
+        # Display results if optimization was done (either just now or previously)
+        if 'optimization_done' in st.session_state and st.session_state['optimization_done']:
+            # Retrieve from session state
+            optimized_content = st.session_state['optimized_content']
+            report = st.session_state['optimization_report']
+            
+            # Calculate text preservation
+            preservation = calculate_text_preservation(resume_data, optimized_content)
+            
+            # Display results
+            st.markdown("---")
+            st.markdown("### 📊 Optimization Results")
+            
+            # Check character limit validation
+            validation = report.get('char_limit_validation', {})
+            violations = validation.get('violations', [])
+            warnings = validation.get('warnings', [])
+            
+            # Show validation status
+            if violations:
+                st.error(f"⚠️ **Character Limit Violations Detected!** ({len(violations)} fields exceed limits)")
+                with st.expander("View Violations"):
+                    for violation in violations:
+                        st.write(f"• {violation}")
+                st.warning("⚠️ **Warning:** These fields may affect resume formatting. Review before applying.")
+            elif warnings:
+                st.warning(f"⚠️ {len(warnings)} field(s) near character limit (90%+)")
+                with st.expander("View Warnings"):
+                    for warning in warnings:
+                        st.write(f"• {warning}")
+            else:
+                st.success("✅ All fields within character limits!")
+            
+            st.markdown("---")
+            
+            # Metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                match_score = report.get('match_score_estimate', 'Unknown')
+                st.metric("ATS Match Score", match_score)
+            with col2:
+                st.metric("Text Preservation", f"{preservation}%")
+            with col3:
+                keywords_added = len(report.get('keywords_added', []))
+                st.metric("Keywords Added", keywords_added)
+            
+            # Show report details
+            with st.expander("📋 View Detailed Report"):
+                st.markdown("**Keywords Extracted from Job Description:**")
+                keywords_extracted = report.get('keywords_extracted', [])
+                if keywords_extracted:
+                    # Handle both list of strings and list of dicts
+                    if len(keywords_extracted) > 0 and isinstance(keywords_extracted[0], dict):
+                        keyword_strs = [str(k) for k in keywords_extracted[:20]]
+                    else:
+                        keyword_strs = [str(k) for k in keywords_extracted[:20]]
+                    st.write(", ".join(keyword_strs))
+                else:
+                    st.write("No keywords listed")
+                
+                st.markdown("**Changes Summary:**")
+                st.write(report.get('changes_summary', 'No summary available'))
+                
+                if 'keywords_added' in report and report['keywords_added']:
+                    st.markdown("**Keywords Successfully Added:**")
+                    # Handle both list of strings and list of dicts
+                    keywords_added = report['keywords_added']
+                    if len(keywords_added) > 0 and isinstance(keywords_added[0], dict):
+                        keyword_strs = [str(k) for k in keywords_added[:15]]
+                    else:
+                        keyword_strs = [str(k) for k in keywords_added[:15]]
+                    st.write(", ".join(keyword_strs))
+            
+            # Preview changes
+            with st.expander("🔍 Preview Changes (Before/After)", expanded=True):
+                # Show Skills comparison
+                if 'skills' in resume_data and 'skills' in optimized_content:
+                    skills_orig = resume_data['skills']
+                    skills_opt = optimized_content['skills']
+                    
+                    # Pick first available skill category
+                    skill_key = None
+                    for key in ['languages', 'software', 'tools']:
+                        if key in skills_orig and key in skills_opt:
+                            skill_key = key
+                            break
+                    
+                    if skill_key:
+                        st.markdown(f"**Skills - {skill_key.title()}:**")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown("*Before:*")
+                            orig_val = skills_orig[skill_key].get('value', '') if isinstance(skills_orig[skill_key], dict) else skills_orig[skill_key]
+                            st.text_area("Original", orig_val, height=80, key="before_skills", disabled=True)
+                        
+                        with col2:
+                            st.markdown("*After:*")
+                            opt_val = skills_opt[skill_key].get('value', '') if isinstance(skills_opt[skill_key], dict) else skills_opt[skill_key]
+                            st.text_area("Optimized", opt_val, height=80, key="after_skills", disabled=True)
+                
+                # Show Professional Experience bullet comparison
+                if 'professional' in resume_data and 'professional' in optimized_content:
+                    if resume_data['professional'] and optimized_content['professional']:
+                        exp_orig = resume_data['professional'][0]
+                        exp_opt = optimized_content['professional'][0]
+                        
+                        if 'bullets' in exp_orig and 'bullets' in exp_opt:
+                            if exp_orig['bullets'] and exp_opt['bullets']:
+                                st.markdown("**Professional Experience - First Bullet:**")
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.markdown("*Before:*")
+                                    bullet_val = exp_orig['bullets'][0].get('value', '') if isinstance(exp_orig['bullets'][0], dict) else exp_orig['bullets'][0]
+                                    st.text_area("Original", bullet_val, height=120, key="before_exp", disabled=True)
+                                
+                                with col2:
+                                    st.markdown("*After:*")
+                                    bullet_val = exp_opt['bullets'][0].get('value', '') if isinstance(exp_opt['bullets'][0], dict) else exp_opt['bullets'][0]
+                                    st.text_area("Optimized", bullet_val, height=120, key="after_exp", disabled=True)
+                
+                # Show Projects bullet comparison
+                if 'projects' in resume_data and 'projects' in optimized_content:
+                    if resume_data['projects'] and optimized_content['projects']:
+                        proj_orig = resume_data['projects'][0]
+                        proj_opt = optimized_content['projects'][0]
+                        
+                        if 'bullets' in proj_orig and 'bullets' in proj_opt:
+                            if proj_orig['bullets'] and proj_opt['bullets']:
+                                st.markdown("**Projects - First Bullet:**")
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.markdown("*Before:*")
+                                    bullet_val = proj_orig['bullets'][0].get('value', '') if isinstance(proj_orig['bullets'][0], dict) else proj_orig['bullets'][0]
+                                    st.text_area("Original", bullet_val, height=120, key="before_proj", disabled=True)
+                                
+                                with col2:
+                                    st.markdown("*After:*")
+                                    bullet_val = proj_opt['bullets'][0].get('value', '') if isinstance(proj_opt['bullets'][0], dict) else proj_opt['bullets'][0]
+                                    st.text_area("Optimized", bullet_val, height=120, key="after_proj", disabled=True)
+            
+            # Quick Actions - Always Available
+            st.markdown("---")
+            st.markdown("### ⚡ Quick Actions")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                # Generate Resume PDF button - always available
+                if st.button("📄 Regenerate Resume PDF", use_container_width=True, type="secondary"):
+                    with st.spinner("Generating resume PDF..."):
+                        # ALWAYS use optimized content if available (from session state)
+                        if 'optimized_content' in st.session_state:
+                            content_to_use = st.session_state['optimized_content']
+                            print("[DEBUG] Using optimized_content from session state")
+                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                        else:
+                            # Clear cache and reload from file
+                            load_resume_content.clear()
+                            with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
+                                content_to_use = json.load(f)
+                            print("[DEBUG] Reloaded from file (cache cleared)")
+                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                        
+                        try:
+                            # Create output directory
+                            output_dir = Path("output/generated_resumes")
+                            output_dir.mkdir(parents=True, exist_ok=True)
+                            
+                            # Generate filename with timestamp
+                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            output_file = output_dir / f"resume_optimized_{timestamp}.docx"
+                            
+                            print(f"[DEBUG] Building resume with content_to_use type: {type(content_to_use)}")
+                            
+                            # Build resume using EnhancedFormatBuilder
+                            builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
+                            result = builder.build_resume_from_json(content_to_use, str(output_file))
+                            
+                            # Show success with download button
+                            st.success(f"✅ Resume generated successfully!")
+                            
+                            # Provide download button
+                            with open(result, "rb") as f:
+                                st.download_button(
+                                    label="⬇️ Download Resume",
+                                    data=f,
+                                    file_name=f"resume_optimized_{timestamp}.docx",
+                                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    use_container_width=True,
+                                    key="download_optimized_resume"
+                                )
+                        except Exception as e:
+                            st.error(f"❌ Error generating resume: {str(e)}")
+            
+            with col2:
+                # Download optimized JSON
+                if st.button("💾 Download Optimized JSON", use_container_width=True, type="secondary"):
+                    content_to_download = st.session_state.get('optimized_content', resume_data)
+                    json_str = json.dumps(content_to_download, indent=2, ensure_ascii=False)
+                    st.download_button(
+                        label="⬇️ Download resume_content.json",
+                        data=json_str,
+                        file_name="resume_content_optimized.json",
+                        mime="application/json",
+                        use_container_width=True
+                    )
+            
+            with col3:
+                # Reset to template - clears all optimizations
+                if st.button("🔄 Reset to Template", use_container_width=True, type="secondary", help="Reset resume to original template (clears AI optimizations)"):
+                    try:
+                        reset_to_template()
+                        # Clear session state
+                        if 'optimized_content' in st.session_state:
+                            del st.session_state['optimized_content']
+                        if 'optimization_report' in st.session_state:
+                            del st.session_state['optimization_report']
+                        if 'optimization_done' in st.session_state:
+                            del st.session_state['optimization_done']
+                        st.success("✅ Reset to original template!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error resetting: {str(e)}")
+            
+            # Save optimized content
+            st.markdown("---")
+            st.markdown("### 💾 Apply Changes to Resume")
+            
+            # Info box for warnings
+            if warnings and not violations:
+                st.info("💡 **Note:** You can still download the resume with warnings, but consider reviewing the highlighted fields.")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                # Show warning if there are violations, but allow apply
+                if st.button("✅ Apply Optimization", type="primary", use_container_width=True):
+                    # Save to resume_content.json
+                    with open(RESUME_CONTENT_JSON, 'w', encoding='utf-8') as f:
+                        json.dump(optimized_content, f, indent=2, ensure_ascii=False)
+                    
+                    # Clear the cache so next operations use new file
+                    load_resume_content.clear()
+                    
+                    st.success("✅ Resume content updated and saved to file!")
+                    
+                    # Clear optimization session state
+                    del st.session_state['optimization_done']
+                    del st.session_state['optimized_content']
+                    del st.session_state['optimization_report']
+                    
+                    st.info("💡 **Success!** Changes saved to resume_content.json. Use 'Regenerate Resume PDF' to create updated PDF, or refresh page to see changes in other tabs.")
+                    # Note: Removed st.rerun() so results stay visible
+                
+                if violations:
+                    st.caption("⚠️ Warning: Character limit violations detected - proceed with caution")
+            
+            with col2:
+                if st.button("❌ Discard Changes", use_container_width=True):
+                    # Clear optimization session state
+                    del st.session_state['optimization_done']
+                    del st.session_state['optimized_content']
+                    del st.session_state['optimization_report']
+                    st.info("✅ Changes discarded - original resume unchanged")
+                    st.rerun()
+
+# B. SKILLS TAB
 with tab_skills:
     st.header("🔧 Skills Section")
-    st.info("Priority A: Edit your technical skills")
+    st.info("Priority B: Edit your technical skills")
     
     skills_data = resume_data.get("skills", {})
     
@@ -595,9 +997,31 @@ with col2:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_file = output_dir / f"resume_{timestamp}.docx"
                 
+                # Reload resume_content.json to get latest changes (in case AI optimization was applied)
+                with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
+                    current_resume_data = json.load(f)
+                
+                # Merge with edited_data from tabs (edited_data takes precedence)
+                # This ensures both tab edits and AI optimizations are included
+                final_data = current_resume_data.copy()
+                
+                # Merge edited data from tabs if any fields were edited
+                if edited_data.get("personal"):
+                    final_data["personal"] = edited_data["personal"]
+                if edited_data.get("education"):
+                    final_data["education"] = edited_data["education"]
+                if edited_data.get("skills"):
+                    final_data["skills"] = edited_data["skills"]
+                if edited_data.get("professional"):
+                    final_data["professional"] = edited_data["professional"]
+                if edited_data.get("projects"):
+                    final_data["projects"] = edited_data["projects"]
+                if edited_data.get("leadership"):
+                    final_data["leadership"] = edited_data["leadership"]
+                
                 # Build resume
                 builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
-                result = builder.build_resume_from_json(edited_data, str(output_file))
+                result = builder.build_resume_from_json(final_data, str(output_file))
                 
                 # Success
                 st.success(f"✅ Resume generated successfully!")

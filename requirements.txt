@@ -4,3 +4,4 @@ Pillow
 openai
 langchain
 langchain-openai
+google-generativeai

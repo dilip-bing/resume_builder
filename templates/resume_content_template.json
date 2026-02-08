@@ -1,0 +1,232 @@
+{
+  "metadata": {
+    "source_file": "C:\\Users\\dilip\\OneDrive\\Desktop\\ResumeBuilder\\reference_docx\\resume_optimized_final.docx",
+    "total_paragraphs": 47
+  },
+  "personal": {
+    "name": {
+      "value": "Dilip Kumar Thirukonda Chandrasekaran",
+      "paragraph_index": 0
+    },
+    "contact_line": {
+      "value": "Binghamton, NY | (607) 624-9390 | dthirukondac@binghamton.edu | linkedin.com/dilipkumartc | dilip-bing.github.io/portfolio/",
+      "paragraph_index": 1,
+      "parts": {
+        "location": "Binghamton, NY",
+        "phone": "(607) 624-9390",
+        "email": "dthirukondac@binghamton.edu",
+        "linkedin": "linkedin.com/dilipkumartc",
+        "portfolio": "dilip-bing.github.io/portfolio/"
+      }
+    }
+  },
+  "education": [
+    {
+      "institution_line": {
+        "value": "Binghamton University, State University of New York, Thomas J. Watson College of Engineering and Applied Science                                                          Master of Science in Computer Science, Artificial Intelligence Track\t                                                      \t                Expected May 2027",
+        "paragraph_index": 4
+      },
+      "university": "Binghamton University, State University of New York, Thomas J. Watson College of Engineering and Applied Science",
+      "degree": "Master of Science in Computer Science, Artificial Intelligence Track",
+      "dates": "Expected May 2027",
+      "gpa": "Cumulative GPA: 3.67/4.00",
+      "coursework": [
+        "Relevant Coursework: Data Structures, Machine Learning, Data Mining, Intelligent Mobile Robotics, NLP and DB Systems"
+      ],
+      "gpa_paragraph_index": 5,
+      "coursework_paragraph_indices": [
+        6
+      ]
+    },
+    {
+      "institution_line": {
+        "value": "KLN College of Engineering, Tamil Nadu, India",
+        "paragraph_index": 7
+      },
+      "university": "KLN College of Engineering, Tamil Nadu, India",
+      "degree": "Bachelor of Engineering in Electronics and Communication Engineering",
+      "dates": "May 2019",
+      "gpa": "",
+      "coursework": [
+        "Relevant Coursework: Object-Oriented Programming, Computer Networks"
+      ],
+      "gpa_paragraph_index": null,
+      "coursework_paragraph_indices": [
+        9
+      ]
+    }
+  ],
+  "skills": {
+    "languages": {
+      "value": "Java, Python, C++, C, Kotlin, Swift, JavaScript, PHP, Shell Script",
+      "paragraph_index": 12,
+      "label": "Languages"
+    },
+    "software": {
+      "value": "Android Studio, Xcode, Gradle, Appium, Docker, GitHub, Linux/Unix, VS Code, Jupyter Notebook",
+      "paragraph_index": 13,
+      "label": "Software"
+    },
+    "tools": {
+      "value": "Appium, Selenium, Espresso, Kaspresso, XCTest, React, MongoDB, MySQL, Firebase, Vercel, TensorFlow, PyTorch, JAX, ROS, SLAM, Navigation, Localization, Motion Planning, AWS",
+      "paragraph_index": 14,
+      "label": "Tools"
+    }
+  },
+  "professional": [
+    {
+      "header_line": {
+        "value": "Zoho Corporation, Senior Automation Engineer | Chennai, India                                                               January 2020  –  July 2025",
+        "paragraph_index": 17
+      },
+      "company": "Zoho Corporation",
+      "role": "Senior Automation Engineer",
+      "location": "Chennai, India",
+      "dates": "January 2020 – July 2025",
+      "tech_stack": {
+        "value": "Android SDK, C++, Gradle, Espresso, Appium, Selenium, XCTest, Kaspresso, React.js, MongoDB, Docker, HTML, CSS, JavaScript, PHP, Shell Script, MySQL",
+        "paragraph_index": 18
+      },
+      "bullets": [
+        {
+          "value": "Architected a custom Android Automation SDK from scratch featuring advanced safety and precision testing protocols, establishing the core framework currently utilized by the entire automation team",
+          "paragraph_index": 19
+        },
+        {
+          "value": "Authored and systematized over 50,000 UI and E2E cases and numerous Unit cases for Android, iOS, and Web platforms",
+          "paragraph_index": 20
+        },
+        {
+          "value": "Developed a complete automation environment consisting of custom mobile apps and website interfaces, providing the necessary infrastructure for developers and managers to execute runs and analyze results",
+          "paragraph_index": 21
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "header_line": {
+        "value": "Test-Lab, Team Lead & Co-Developer                       \t                                                                      September 2024 – July 2025",
+        "paragraph_index": 24
+      },
+      "name": "Test-Lab",
+      "role": "Team Lead & Co-Developer",
+      "dates": "September 2024 – July 2025",
+      "tech_stack": {
+        "value": "React, MongoDB, Shell Scripting, Android Emulator, Docker, REST APIs",
+        "paragraph_index": 25
+      },
+      "bullets": [
+        {
+          "value": "Directed the full lifecycle of a cloud-based testing infrastructure to validate application performance, organizing distinct teams across UI design, script writing, and database management from ideation to deployment",
+          "paragraph_index": 26
+        },
+        {
+          "value": "Devised a custom Mobile Farm site from scratch to host both virtual and real devices, enabling the execution of automation and manual testing cycles",
+          "paragraph_index": 27
+        }
+      ]
+    },
+    {
+      "header_line": {
+        "value": "3D Printer & Scanner, Team Project\t                       \t\t\t          \t             \t         January 2019 – February 2019",
+        "paragraph_index": 28
+      },
+      "name": "3D Printer & Scanner",
+      "role": "Team Project",
+      "dates": "January 2019 – February 2019",
+      "tech_stack": {
+        "value": "3D CAD Software, IoT Sensors, Microcontroller Programming",
+        "paragraph_index": 29
+      },
+      "bullets": [
+        {
+          "value": "Fabricated a customized 3D printer and scanner using microcontrollers to scan physical inputs and produce precise 3D models",
+          "paragraph_index": 30
+        },
+        {
+          "value": "Secured a top ranking in a NIT competition, recognized for innovative design and technical implementation",
+          "paragraph_index": 31
+        }
+      ]
+    },
+    {
+      "header_line": {
+        "value": "Obstacle Avoiding Robot, Team Project     \t\t\t\t   \t                       October 2016 – November 2016",
+        "paragraph_index": 32
+      },
+      "name": "Obstacle Avoiding Robot",
+      "role": "Team Project",
+      "dates": "October 2016 – November 2016",
+      "tech_stack": {
+        "value": "C++, Embedded Systems, Microcontroller Programming, Real-Time Systems, Autonomous Navigation",
+        "paragraph_index": 33
+      },
+      "bullets": [
+        {
+          "value": "Developed custom algorithm enabling autonomous obstacle avoidance with real-time decision-making capabilities using embedded systems and sensor fusion",
+          "paragraph_index": 34
+        },
+        {
+          "value": "Secured top ranking in a PHYSICA’16 competition, recognized for innovative robotics design and autonomous navigation implementation",
+          "paragraph_index": 35
+        }
+      ]
+    },
+    {
+      "header_line": {
+        "value": "Earthworm - Plant and Disease Detection System, Team Project\t                       \t                                                September 2018",
+        "paragraph_index": 36
+      },
+      "name": "Earthworm - Plant and Disease Detection System",
+      "role": "Team Project",
+      "dates": "September 2018",
+      "tech_stack": {
+        "value": "Python, TensorFlow, Deep Learning, Inception V3, Computer Vision",
+        "paragraph_index": 37
+      },
+      "bullets": [
+        {
+          "value": "Developed an AI diagnostic tool using Inception V3 to detect plant pathologies from leaf imagery",
+          "paragraph_index": 38
+        },
+        {
+          "value": "Attained 95% accuracy across 17 disease categories by training the model on diverse datasets",
+          "paragraph_index": 39
+        }
+      ]
+    }
+  ],
+  "leadership": [
+    {
+      "header_line": {
+        "value": "Jambav Zoho Corporation, Android Department Head                                                                              January 2023 – July 2025",
+        "paragraph_index": 42
+      },
+      "organization": "Jambav Zoho Corporation",
+      "title": "Android Department Head",
+      "dates": "January 2023 – July 2025",
+      "bullets": [
+        {
+          "value": "Led and mentored a cross-functional team of 10 engineers in Android development and automation, driving project delivery via Agile methodologies while fostering technical growth through code reviews and performance evaluations.",
+          "paragraph_index": 43
+        }
+      ]
+    },
+    {
+      "header_line": {
+        "value": "Zoho Calendar, Automation Lead        \t\t\t\t                                                          January 2024 – July 2025",
+        "paragraph_index": 44
+      },
+      "organization": "Zoho Calendar",
+      "title": "Automation Lead",
+      "dates": "January 2024 – July 2025",
+      "bullets": [
+        {
+          "value": "Directed the QA lifecycle and task allocation for distributed teams across mobile and web platforms, implementing operational excellence and technical documentation to strengthen engineering capabilities and ensure zero-defect releases.",
+          "paragraph_index": 45
+        }
+      ]
+    }
+  ]
+}
