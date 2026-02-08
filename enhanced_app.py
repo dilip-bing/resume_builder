@@ -1059,23 +1059,31 @@ with col2:
                 print(f"[GENERATE] Source: {source}")
                 st.info(f"📝 Using content from: **{source}**")
                 
-                # Merge with edited_data from tabs (edited_data takes precedence)
-                # This ensures both tab edits and AI optimizations are included
-                final_data = current_resume_data.copy()
-                
-                # Merge edited data from tabs if any fields were edited
-                if edited_data.get("personal"):
-                    final_data["personal"] = edited_data["personal"]
-                if edited_data.get("education"):
-                    final_data["education"] = edited_data["education"]
-                if edited_data.get("skills"):
-                    final_data["skills"] = edited_data["skills"]
-                if edited_data.get("professional"):
-                    final_data["professional"] = edited_data["professional"]
-                if edited_data.get("projects"):
-                    final_data["projects"] = edited_data["projects"]
-                if edited_data.get("leadership"):
-                    final_data["leadership"] = edited_data["leadership"]
+                # CRITICAL FIX: If AI optimization was applied, use it directly
+                # Don't merge with edited_data from tabs (tabs show old cached values)
+                # User can refresh page after Apply to see optimized values in tabs
+                if 'applied_content' in st.session_state:
+                    final_data = current_resume_data  # Use AI-optimized content directly
+                    print("[GENERATE] Using AI-optimized content WITHOUT tab merge (tabs show old cached data)")
+                else:
+                    # Merge with edited_data from tabs (only when no AI optimization)
+                    final_data = current_resume_data.copy()
+                    
+                    # Merge edited data from tabs if any fields were edited
+                    if edited_data.get("personal"):
+                        final_data["personal"] = edited_data["personal"]
+                    if edited_data.get("education"):
+                        final_data["education"] = edited_data["education"]
+                    if edited_data.get("skills"):
+                        final_data["skills"] = edited_data["skills"]
+                    if edited_data.get("professional"):
+                        final_data["professional"] = edited_data["professional"]
+                    if edited_data.get("projects"):
+                        final_data["projects"] = edited_data["projects"]
+                    if edited_data.get("leadership"):
+                        final_data["leadership"] = edited_data["leadership"]
+                    
+                    print("[GENERATE] Using file content WITH tab edits merged")
                 
                 # Create temp file for generation
                 import tempfile
