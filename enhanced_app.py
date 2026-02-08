@@ -204,10 +204,17 @@ with tab_ai:
         if 'optimization_done' in st.session_state and st.session_state['optimization_done']:
             st.info("ℹ️ **Previous optimization results available**")
             if st.button("🔄 Start New Optimization", type="secondary"):
-                # Clear session state
-                del st.session_state['optimization_done']
-                del st.session_state['optimized_content']
-                del st.session_state['optimization_report']
+                # Clear all optimization session state
+                if 'optimization_done' in st.session_state:
+                    del st.session_state['optimization_done']
+                if 'optimized_content' in st.session_state:
+                    del st.session_state['optimized_content']
+                if 'optimization_report' in st.session_state:
+                    del st.session_state['optimization_report']
+                if 'applied_content' in st.session_state:
+                    del st.session_state['applied_content']
+                if 'optimization_applied' in st.session_state:
+                    del st.session_state['optimization_applied']
                 st.rerun()
         
         # Job description input
@@ -408,10 +415,15 @@ with tab_ai:
                 # Generate Resume PDF button - always available
                 if st.button("📄 Regenerate Resume PDF", use_container_width=True, type="secondary"):
                     with st.spinner("Generating resume PDF..."):
-                        # ALWAYS use optimized content if available (from session state)
-                        if 'optimized_content' in st.session_state:
+                        # Priority order: applied_content > optimized_content > file
+                        # This ensures it works on both local and Streamlit Cloud
+                        if 'applied_content' in st.session_state:
+                            content_to_use = st.session_state['applied_content']
+                            print("[DEBUG] Using applied_content from session state (after Apply clicked)")
+                            print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
+                        elif 'optimized_content' in st.session_state:
                             content_to_use = st.session_state['optimized_content']
-                            print("[DEBUG] Using optimized_content from session state")
+                            print("[DEBUG] Using optimized_content from session state (before Apply)")
                             print(f"[DEBUG] Skills.languages: {content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')}")
                         else:
                             # Clear cache and reload from file
@@ -455,7 +467,14 @@ with tab_ai:
             with col2:
                 # Download optimized JSON
                 if st.button("💾 Download Optimized JSON", use_container_width=True, type="secondary"):
-                    content_to_download = st.session_state.get('optimized_content', resume_data)
+                    # Use same priority as PDF generation: applied > optimized > original
+                    if 'applied_content' in st.session_state:
+                        content_to_download = st.session_state['applied_content']
+                    elif 'optimized_content' in st.session_state:
+                        content_to_download = st.session_state['optimized_content']
+                    else:
+                        content_to_download = resume_data
+                    
                     json_str = json.dumps(content_to_download, indent=2, ensure_ascii=False)
                     st.download_button(
                         label="⬇️ Download resume_content.json",
@@ -470,13 +489,17 @@ with tab_ai:
                 if st.button("🔄 Reset to Template", use_container_width=True, type="secondary", help="Reset resume to original template (clears AI optimizations)"):
                     try:
                         reset_to_template()
-                        # Clear session state
+                        # Clear all optimization session state
                         if 'optimized_content' in st.session_state:
                             del st.session_state['optimized_content']
                         if 'optimization_report' in st.session_state:
                             del st.session_state['optimization_report']
                         if 'optimization_done' in st.session_state:
                             del st.session_state['optimization_done']
+                        if 'applied_content' in st.session_state:
+                            del st.session_state['applied_content']
+                        if 'optimization_applied' in st.session_state:
+                            del st.session_state['optimization_applied']
                         st.success("✅ Reset to original template!")
                         st.rerun()
                     except Exception as e:
@@ -494,21 +517,31 @@ with tab_ai:
             with col1:
                 # Show warning if there are violations, but allow apply
                 if st.button("✅ Apply Optimization", type="primary", use_container_width=True):
-                    # Save to resume_content.json
-                    with open(RESUME_CONTENT_JSON, 'w', encoding='utf-8') as f:
-                        json.dump(optimized_content, f, indent=2, ensure_ascii=False)
+                    # Try to save to file (works locally, fails gracefully on Streamlit Cloud)
+                    file_saved = False
+                    try:
+                        with open(RESUME_CONTENT_JSON, 'w', encoding='utf-8') as f:
+                            json.dump(optimized_content, f, indent=2, ensure_ascii=False)
+                        file_saved = True
+                        load_resume_content.clear()  # Clear cache only if file write succeeded
+                    except (OSError, IOError, PermissionError) as e:
+                        # Streamlit Cloud has read-only filesystem - this is expected
+                        print(f"[INFO] Could not write to file (read-only filesystem on cloud): {e}")
                     
-                    # Clear the cache so next operations use new file
-                    load_resume_content.clear()
+                    # CRITICAL: Save optimized content to persistent session state
+                    # This ensures it's available for PDF generation even on cloud
+                    st.session_state['applied_content'] = optimized_content
                     
-                    st.success("✅ Resume content updated and saved to file!")
+                    # Show appropriate success message
+                    if file_saved:
+                        st.success("✅ Resume content saved locally and ready for PDF generation!")
+                    else:
+                        st.success("✅ Resume content ready for PDF generation! (Cloud mode - using session storage)")
                     
-                    # Clear optimization session state
-                    del st.session_state['optimization_done']
-                    del st.session_state['optimized_content']
-                    del st.session_state['optimization_report']
+                    # Keep optimization results visible but mark as applied
+                    st.session_state['optimization_applied'] = True
                     
-                    st.info("💡 **Success!** Changes saved to resume_content.json. Use 'Regenerate Resume PDF' to create updated PDF, or refresh page to see changes in other tabs.")
+                    st.info("💡 **Success!** Use 'Regenerate Resume PDF' button above to download your optimized resume.")
                     # Note: Removed st.rerun() so results stay visible
                 
                 if violations:
@@ -516,10 +549,17 @@ with tab_ai:
             
             with col2:
                 if st.button("❌ Discard Changes", use_container_width=True):
-                    # Clear optimization session state
-                    del st.session_state['optimization_done']
-                    del st.session_state['optimized_content']
-                    del st.session_state['optimization_report']
+                    # Clear all optimization-related session state
+                    if 'optimization_done' in st.session_state:
+                        del st.session_state['optimization_done']
+                    if 'optimized_content' in st.session_state:
+                        del st.session_state['optimized_content']
+                    if 'optimization_report' in st.session_state:
+                        del st.session_state['optimization_report']
+                    if 'applied_content' in st.session_state:
+                        del st.session_state['applied_content']
+                    if 'optimization_applied' in st.session_state:
+                        del st.session_state['optimization_applied']
                     st.info("✅ Changes discarded - original resume unchanged")
                     st.rerun()
 
@@ -997,9 +1037,16 @@ with col2:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_file = output_dir / f"resume_{timestamp}.docx"
                 
-                # Reload resume_content.json to get latest changes (in case AI optimization was applied)
-                with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
-                    current_resume_data = json.load(f)
+                # Priority: Use applied AI optimization if available, else reload from file
+                # This ensures AI optimizations work on Streamlit Cloud (read-only filesystem)
+                if 'applied_content' in st.session_state:
+                    current_resume_data = st.session_state['applied_content']
+                    print("[DEBUG] Generate Resume: Using applied_content from session state")
+                else:
+                    # Reload resume_content.json to get latest changes
+                    with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
+                        current_resume_data = json.load(f)
+                    print("[DEBUG] Generate Resume: Loaded from file")
                 
                 # Merge with edited_data from tabs (edited_data takes precedence)
                 # This ensures both tab edits and AI optimizations are included
