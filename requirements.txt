@@ -5,3 +5,7 @@ openai
 langchain
 langchain-openai
 google-generativeai
+fastapi
+uvicorn[standard]
+python-multipart
+toml
