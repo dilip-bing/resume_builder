@@ -20,12 +20,12 @@ from pathlib import Path
 # ============================================================
 
 # API URL - Update after deploying to Render
-API_URL = "http://localhost:8000"  # Local
-# API_URL = "https://resume-optimizer-api.onrender.com"  # Remote (uncomment after deploy)
+API_URL = "https://resume-optimizer-api-fvpd.onrender.com"  # Your deployed API
+# API_URL = "http://localhost:8000"  # Local (uncomment for local testing)
 
 # API Secret Key - Get this from start_api.py output or .streamlit/secrets.toml
 # This protects your API from unauthorized use
-API_SECRET_KEY = "your-api-secret-key-here"  # UPDATE THIS!
+API_SECRET_KEY = "nFDqvbuNJb4dwsoL9E6HfyTaPC-O2oeHvK-y1RWDSGU"  # Your API key
 
 # Output directory for resumes
 OUTPUT_DIR = "generated_resumes"

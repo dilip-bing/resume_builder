@@ -13,14 +13,14 @@ from pathlib import Path
 # ============================================================
 
 # After deploying to Render, replace this with your actual URL
-API_URL = "https://resume-optimizer-api.onrender.com"
+API_URL = "https://resume-optimizer-api-fvpd.onrender.com"
 
 # Or use local API for testing
 # API_URL = "http://localhost:8000"
 
 # API Secret Key - Get this from start_api.py or your deployment settings
 # This protects your API from unauthorized use
-API_SECRET_KEY = "your-api-secret-key-here"  # UPDATE THIS!
+API_SECRET_KEY = "nFDqvbuNJb4dwsoL9E6HfyTaPC-O2oeHvK-y1RWDSGU"  # Your API key
 
 # ============================================================
 

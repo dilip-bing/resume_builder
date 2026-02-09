@@ -11,10 +11,10 @@ import json
 # ============================================================
 
 # Your Render URL (after deployment)
-API_URL = "https://resume-optimizer-api.onrender.com"  # ← PASTE YOUR RENDER URL HERE
+API_URL = "https://resume-optimizer-api-fvpd.onrender.com"  # ← PASTE YOUR RENDER URL HERE
 
 # Your API Secret Key (from Render environment variables)
-API_SECRET_KEY = "PASTE_YOUR_API_KEY_HERE"  # ← PASTE YOUR API KEY HERE
+API_SECRET_KEY = "nFDqvbuNJb4dwsoL9E6HfyTaPC-O2oeHvK-y1RWDSGU"  # ← PASTE YOUR API KEY HERE
 
 # ============================================================
 
@@ -34,8 +34,9 @@ if "PASTE_YOUR" in API_URL or "PASTE_YOUR" in API_SECRET_KEY:
 
 # Test 1: Health Check
 print("\n[1/2] Testing health endpoint...")
+print("⏳ If this is the first request, it may take 30-60 seconds (cold start)...")
 try:
-    response = requests.get(f"{API_URL}/health", timeout=10)
+    response = requests.get(f"{API_URL}/health", timeout=60)
     print(f"✅ Status: {response.status_code}")
     
     health = response.json()
