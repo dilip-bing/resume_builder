@@ -23,6 +23,10 @@ from pathlib import Path
 API_URL = "http://localhost:8000"  # Local
 # API_URL = "https://resume-optimizer-api.onrender.com"  # Remote (uncomment after deploy)
 
+# API Secret Key - Get this from start_api.py output or .streamlit/secrets.toml
+# This protects your API from unauthorized use
+API_SECRET_KEY = "your-api-secret-key-here"  # UPDATE THIS!
+
 # Output directory for resumes
 OUTPUT_DIR = "generated_resumes"
 
@@ -80,6 +84,9 @@ def optimize_resume(job_description: str, timeout: int = 120):
                 "job_description": job_description,
                 "return_format": "base64"
             },
+            headers={
+                "X-API-Key": API_SECRET_KEY
+            },
             timeout=timeout
         )
         response.raise_for_status()
@@ -87,6 +94,16 @@ def optimize_resume(job_description: str, timeout: int = 120):
     
     except requests.exceptions.Timeout:
         print("   ❌ Timeout - job description too long or API slow")
+        return None
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            print("   ❌ Authentication failed - API key missing")
+            print("   Update API_SECRET_KEY in this file")
+        elif e.response.status_code == 403:
+            print("   ❌ Authentication failed - Invalid API key")
+            print("   Get the correct key from start_api.py output")
+        else:
+            print(f"   ❌ HTTP Error: {e}")
         return None
     except requests.exceptions.ConnectionError:
         print(f"   ❌ Cannot connect to {API_URL}")
@@ -135,6 +152,15 @@ def process_jobs(jobs: list):
     print(f"🚀 Automated Job Application - Processing {len(jobs)} Jobs")
     print("="*80)
     
+    # Check API key is set
+    if not API_SECRET_KEY or API_SECRET_KEY == "your-api-secret-key-here":
+        print("\n❌ ERROR: API_SECRET_KEY not configured!")
+        print("\nSteps to fix:")
+        print("1. Run: python start_api.py")
+        print("2. Copy the 'Your API Secret Key' value")
+        print("3. Update API_SECRET_KEY in this file (line 22)")
+        return []
+    
     # Check API first
     print(f"\n🔍 Checking API: {API_URL}")
     try:
@@ -142,7 +168,10 @@ def process_jobs(jobs: list):
         if health.get('status') != 'healthy':
             print("❌ API is not healthy!")
             return []
-        print("✅ API is ready")
+        if health.get('authentication') == 'enabled':
+            print("✅ API is ready (authentication enabled)")
+        else:
+            print("⚠️  API is ready (authentication disabled - not secure!)")
     except Exception as e:
         print(f"❌ API check failed: {e}")
         print("\nMake sure API is running:")

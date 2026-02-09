@@ -6,8 +6,22 @@ Run this to verify the API is working correctly
 import requests
 import time
 import base64
+import os
 
 API_URL = "http://localhost:8000"
+
+# Try to get API secret key from environment or secrets.toml
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+
+if not API_SECRET_KEY:
+    try:
+        import toml
+        secrets_path = ".streamlit/secrets.toml"
+        if os.path.exists(secrets_path):
+            secrets_data = toml.load(secrets_path)
+            API_SECRET_KEY = secrets_data.get("API_SECRET_KEY")
+    except:
+        pass
 
 def test_api():
     """Test the Resume Optimizer API"""
@@ -15,6 +29,13 @@ def test_api():
     print("\n" + "=" * 70)
     print("Resume Optimizer API - Quick Test")
     print("=" * 70)
+    
+    if not API_SECRET_KEY:
+        print("\n⚠️  WARNING: API_SECRET_KEY not found!")
+        print("   If API has authentication enabled, tests will fail.")
+        print("   Get key from: python start_api.py output")
+        print("\n   Continuing anyway...")
+        print("=" * 70)
     
     # Test 1: Root endpoint
     print("\n[Test 1/4] Testing root endpoint...")
@@ -93,12 +114,17 @@ def test_api():
     try:
         start_time = time.time()
         
+        headers = {}
+        if API_SECRET_KEY:
+            headers["X-API-Key"] = API_SECRET_KEY
+        
         response = requests.post(
             f"{API_URL}/api/v1/optimize",
             json={
                 "job_description": test_job_description,
                 "return_format": "base64"
             },
+            headers=headers,
             timeout=120
         )
         response.raise_for_status()
@@ -122,6 +148,18 @@ def test_api():
         
     except requests.exceptions.Timeout:
         print("❌ Optimization timed out (>120 seconds)")
+        return False
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 401:
+            print("❌ Authentication error: Missing API key")
+            print("   Set API_SECRET_KEY environment variable")
+        elif e.response.status_code == 403:
+            print("❌ Authentication error: Invalid API key")
+            print("   Check API_SECRET_KEY value")
+        else:
+            print(f"❌ Optimization failed: {e}")
+        import traceback
+        traceback.print_exc()
         return False
     except Exception as e:
         print(f"❌ Optimization failed: {e}")

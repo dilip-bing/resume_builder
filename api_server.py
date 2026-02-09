@@ -3,8 +3,9 @@ FastAPI Server for Resume Optimization API
 Provides REST API endpoint for automated resume generation with job description
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Header, Depends
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
@@ -13,6 +14,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 import os
+import secrets
 
 # Import existing resume builder components
 from gemini_optimizer import GeminiATSOptimizer
@@ -28,22 +30,68 @@ app = FastAPI(
 # Configuration
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# API Key for authentication (set this as environment variable)
+API_SECRET_KEY = os.getenv("API_SECRET_KEY")
+
 # If not in environment, try to load from .streamlit/secrets.toml
-if not GEMINI_API_KEY:
+if not GEMINI_API_KEY or not API_SECRET_KEY:
     try:
         import toml
         secrets_path = ".streamlit/secrets.toml"
         if os.path.exists(secrets_path):
-            secrets = toml.load(secrets_path)
-            GEMINI_API_KEY = secrets.get("GEMINI_API_KEY")
-            if GEMINI_API_KEY:
-                print(f"[INFO] Loaded API key from {secrets_path}")
+            secrets_data = toml.load(secrets_path)
+            if not GEMINI_API_KEY:
+                GEMINI_API_KEY = secrets_data.get("GEMINI_API_KEY")
+                if GEMINI_API_KEY:
+                    print(f"[INFO] Loaded GEMINI_API_KEY from {secrets_path}")
+            if not API_SECRET_KEY:
+                API_SECRET_KEY = secrets_data.get("API_SECRET_KEY")
+                if API_SECRET_KEY:
+                    print(f"[INFO] Loaded API_SECRET_KEY from {secrets_path}")
     except Exception as e:
         print(f"[WARNING] Could not load from secrets.toml: {e}")
+
+# Generate a random API key if not set (for local development)
+if not API_SECRET_KEY:
+    API_SECRET_KEY = secrets.token_urlsafe(32)
+    print(f"\n{'='*70}")
+    print("⚠️  WARNING: API_SECRET_KEY not set!")
+    print("="*70)
+    print(f"Using temporary key: {API_SECRET_KEY}")
+    print("\nFor production, set API_SECRET_KEY environment variable:")
+    print("  export API_SECRET_KEY='your-secret-key-here'")
+    print("="*70 + "\n")
 
 RESUME_CONTENT_TEMPLATE = "templates/resume_content_template.json"
 FORMAT_METADATA_JSON = "metadata/format_metadata.json"
 ORIGINAL_RESUME = "reference_docx/resume_optimized_final.docx"
+
+# API Key security
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def verify_api_key(api_key: str = Depends(api_key_header)):
+    """
+    Verify API key for authentication
+    
+    Args:
+        api_key: API key from X-API-Key header
+    
+    Raises:
+        HTTPException: If API key is missing or invalid
+    """
+    if not api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Missing API key. Include 'X-API-Key' header with your request."
+        )
+    
+    if api_key != API_SECRET_KEY:
+        raise HTTPException(
+            status_code=403,
+            detail="Invalid API key. Access denied."
+        )
+    
+    return api_key
 
 # Request/Response models
 class OptimizeRequest(BaseModel):
@@ -86,6 +134,7 @@ async def health_check():
     """Detailed health check"""
     checks = {
         "api_key_configured": GEMINI_API_KEY is not None and GEMINI_API_KEY != "",
+        "secret_key_configured": API_SECRET_KEY is not None and API_SECRET_KEY != "",
         "template_exists": Path(RESUME_CONTENT_TEMPLATE).exists(),
         "metadata_exists": Path(FORMAT_METADATA_JSON).exists(),
         "original_resume_exists": Path(ORIGINAL_RESUME).exists()
@@ -96,13 +145,16 @@ async def health_check():
     return {
         "status": "healthy" if all_healthy else "unhealthy",
         "checks": checks,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "authentication": "enabled" if API_SECRET_KEY else "disabled"
     }
 
 @app.post("/api/v1/optimize", response_model=OptimizeResponse)
-async def optimize_resume(request: OptimizeRequest):
+async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verify_api_key)):
     """
     Optimize resume for a specific job description
+    
+    **Authentication:** Requires X-API-Key header
     
     **Parameters:**
     - job_description: Full text of the job posting
@@ -231,9 +283,11 @@ async def optimize_resume(request: OptimizeRequest):
         )
 
 @app.get("/api/v1/download/{filename}")
-async def download_resume(filename: str):
+async def download_resume(filename: str, api_key: str = Depends(verify_api_key)):
     """
     Download a generated resume file
+    
+    **Authentication:** Requires X-API-Key header
     
     **Parameters:**
     - filename: Name of the generated resume file

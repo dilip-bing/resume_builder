@@ -41,15 +41,29 @@ Fill in these settings:
 | **Start Command** | `uvicorn api_server:app --host 0.0.0.0 --port $PORT` |
 | **Instance Type** | **Free** |
 
-### Step 4: Add Environment Variable
+### Step 4: Add Environment Variables
 
 1. Scroll to **"Environment Variables"**
 2. Click **"Add Environment Variable"**
-3. Set:
+
+**Add GEMINI_API_KEY:**
    - **Key**: `GEMINI_API_KEY`
    - **Value**: `AIzaSyA3_TlXuEFkCnTN55CrhfusNffMCqXmzDA` (your key)
+   - Click **"Add"**
 
-4. Click **"Add"**
+**Add API_SECRET_KEY** (for authentication):
+   - Click **"Add Environment Variable"** again
+   - **Key**: `API_SECRET_KEY`
+   - **Value**: Generate a secure key:
+     ```bash
+     python -c "import secrets; print(secrets.token_urlsafe(32))"
+     ```
+     Example: `Xk7mP9nQ2rU5wY8zB1cD4fG6hJ0kL3mN5pR7sT9vW2xZ4aE6gI8jK0m`
+   - Click **"Add"**
+
+**⚠️ Important:** Save your API_SECRET_KEY! You'll need it to access your API.
+
+💡 You can also get a recommended key by running `python start_api.py` locally.
 
 ### Step 5: Deploy
 
@@ -64,8 +78,9 @@ Once deployed, test it:
 ```python
 import requests
 
-# Replace with YOUR Render URL
+# Replace with YOUR Render URL and API key
 API_URL = "https://resume-optimizer-api.onrender.com"
+API_SECRET_KEY = "your-secret-key-from-step-4"
 
 # Health check
 response = requests.get(f"{API_URL}/health")
@@ -77,6 +92,9 @@ result = requests.post(
     json={
         "job_description": "Your job description...",
         "return_format": "base64"
+    },
+    headers={
+        "X-API-Key": API_SECRET_KEY  # Required for authentication
     },
     timeout=120
 )
@@ -93,6 +111,7 @@ import base64
 
 # Your deployed API URL (access from anywhere!)
 API_URL = "https://resume-optimizer-api.onrender.com"
+API_SECRET_KEY = "your-api-secret-key-here"  # From Render environment variables
 
 def get_optimized_resume(job_description):
     """Get optimized resume from remote API"""
@@ -102,6 +121,9 @@ def get_optimized_resume(job_description):
         json={
             "job_description": job_description,
             "return_format": "base64"
+        },
+        headers={
+            "X-API-Key": API_SECRET_KEY  # Authentication required
         },
         timeout=120
     )
@@ -224,14 +246,27 @@ You'll see deployment status in Render dashboard.
    - Never exposed in code or logs
    - Can rotate anytime in dashboard
 
-2. **Optional: Add API Authentication**
-   - Add a secret token to prevent unauthorized use
-   - See `api_authentication.md` (if needed)
+2. **API Authentication (NEW!)**
+   - Your API requires a secret key for all requests
+   - Set `API_SECRET_KEY` environment variable in Render
+   - Include `X-API-Key` header in all requests
+   - Prevents unauthorized use of your API
+   - See [API_AUTHENTICATION.md](API_AUTHENTICATION.md) for details
 
-3. **Rate Limiting** (if you want)
-   - Limit requests per minute
-   - Prevent abuse
-   - Easy to add later
+3. **Protect Your Keys**
+   - Never commit keys to Git
+   - Don't share keys publicly (screenshots, logs, etc.)
+   - Use environment variables for production
+   - Rotate keys periodically (every 3-6 months)
+
+**Example authenticated request:**
+```python
+headers = {
+    "X-API-Key": "your-secret-key-here"
+}
+
+response = requests.post(url, json=data, headers=headers)
+```
 
 ## 🎉 Complete Workflow
 

@@ -18,6 +18,10 @@ API_URL = "https://resume-optimizer-api.onrender.com"
 # Or use local API for testing
 # API_URL = "http://localhost:8000"
 
+# API Secret Key - Get this from start_api.py or your deployment settings
+# This protects your API from unauthorized use
+API_SECRET_KEY = "your-api-secret-key-here"  # UPDATE THIS!
+
 # ============================================================
 
 def check_api_status():
@@ -90,6 +94,9 @@ def optimize_resume_remote(job_description: str, output_filename: str = None):
                 "job_description": job_description,
                 "return_format": "base64"
             },
+            headers={
+                "X-API-Key": API_SECRET_KEY
+            },
             timeout=120  # 2 minute timeout
         )
         response.raise_for_status()
@@ -125,12 +132,19 @@ def optimize_resume_remote(job_description: str, output_filename: str = None):
         print("   Job description might be too long")
         return None
     except requests.exceptions.HTTPError as e:
-        print(f"❌ API error: {e}")
-        try:
-            error = response.json()
-            print(f"   Detail: {error.get('detail', 'Unknown error')}")
-        except:
-            pass
+        if e.response.status_code == 401:
+            print("❌ Authentication error: Missing API key")
+            print("   Update API_SECRET_KEY in this file")
+        elif e.response.status_code == 403:
+            print("❌ Authentication error: Invalid API key")
+            print("   Get the correct key from your API deployment")
+        else:
+            print(f"❌ API error: {e}")
+            try:
+                error = response.json()
+                print(f"   Detail: {error.get('detail', 'Unknown error')}")
+            except:
+                pass
         return None
     except Exception as e:
         print(f"❌ Error: {e}")
@@ -217,6 +231,20 @@ if __name__ == "__main__":
     print(f"\n🌐 Using API: {API_URL}")
     print("\n💡 Use case: Call API from anywhere to get optimized resumes")
     print("="*70)
+    
+    # Check if API key is configured
+    if not API_SECRET_KEY or API_SECRET_KEY == "your-api-secret-key-here":
+        print("\n❌ ERROR: API_SECRET_KEY not configured!")
+        print("\nSteps to fix:")
+        print("1. If using local API:")
+        print("   - Run: python start_api.py")
+        print("   - Copy the 'Your API Secret Key' value")
+        print("2. If using remote API (Render):")
+        print("   - Check your Render dashboard")
+        print("   - Look for API_SECRET_KEY environment variable")
+        print("3. Update API_SECRET_KEY in this file (line 22)")
+        print("="*70)
+        exit(1)
     
     # Step 1: Check if API is online
     if not check_api_status():
