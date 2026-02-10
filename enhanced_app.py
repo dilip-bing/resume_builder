@@ -254,6 +254,7 @@ with tab_ai:
                     st.session_state['optimized_content'] = optimized_content
                     st.session_state['optimization_report'] = report
                     st.session_state['optimization_done'] = True
+                    st.session_state['last_job_description'] = job_description  # Store for cover letter
                     
                     st.success("✅ **AI optimization complete!**")
                     
@@ -467,11 +468,16 @@ with tab_ai:
                             st.download_button(
                                 label="⬇️ Download Resume",
                                 data=resume_bytes,
-                                file_name=f"resume_optimized_{timestamp}.docx",
+                                file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                 use_container_width=True,
                                 key=f"download_optimized_{timestamp}"
                             )
+                            
+                            # Store resume in session for cover letter generation
+                            st.session_state['last_generated_resume'] = resume_bytes
+                            st.session_state['last_resume_timestamp'] = timestamp
+                            
                         except Exception as e:
                             st.error(f"❌ Error generating resume: {str(e)}")
                             import traceback
@@ -517,6 +523,138 @@ with tab_ai:
                         st.rerun()
                     except Exception as e:
                         st.error(f"❌ Error resetting: {str(e)}")
+            
+            # Cover Letter Generation Section
+            st.markdown("---")
+            st.markdown("### ✉️ Generate Cover Letter")
+            
+            st.info("💡 Generate an AI-powered cover letter tailored to this job description")
+            
+            if st.button("📝 Generate Cover Letter", use_container_width=True, type="primary", key="gen_cover_letter_btn"):
+                with st.spinner("Generating cover letter with AI (5 paragraphs, <60 words each)..."):
+                    try:
+                        # Get job description from session
+                        job_description = st.session_state.get('last_job_description', '')
+                        
+                        if not job_description:
+                            st.error("❌ No job description found. Please re-run optimization with a job description.")
+                        else:
+                            # Import cover letter generator
+                            from cover_letter_generator import CoverLetterGenerator
+                            
+                            # Get optimized content as context
+                            if 'applied_content' in st.session_state:
+                                resume_content = st.session_state['applied_content']
+                            elif 'optimized_content' in st.session_state:
+                                resume_content = st.session_state['optimized_content']
+                            else:
+                                resume_content = resume_data
+                            
+                            # Create resume text summary for context
+                            resume_text = f"""
+                            Skills: {resume_content.get('skills', {}).get('languages', {}).get('value', '')}, 
+                            {resume_content.get('skills', {}).get('software', {}).get('value', '')}
+                            """
+                            if resume_content.get('professional'):
+                                resume_text += f"\nExperience: {resume_content['professional'][0].get('position', '')}"
+                            
+                            # Initialize cover letter generator with same API key as optimizer
+                            try:
+                                api_key = st.secrets["GEMINI_API_KEY"]
+                            except Exception:
+                                st.error("❌ GEMINI_API_KEY not found in secrets.toml")
+                                raise
+                            
+                            generator = CoverLetterGenerator(api_key=api_key)
+                            
+                            # Generate cover letter
+                            st.info("🤖 AI is writing your cover letter (5 paragraphs)...")
+                            doc, company_name = generator.create_cover_letter_docx(
+                                job_description=job_description,
+                                resume_text=resume_text,
+                                context="Passionate about technology and eager to contribute to innovative projects",
+                                applicant_name="Dilip Kumar Thirukonda Chandrasekaran",
+                                applicant_email="dthirukondac@binghamton.edu",
+                                applicant_phone="(607) 624-9390"
+                            )
+                            
+                            # Save to temp file to get bytes
+                            timestamp_cl = datetime.now().strftime("%Y%m%d_%H%M%S")
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+                                temp_path_cl = tmp_file.name
+                            
+                            doc.save(temp_path_cl)
+                            
+                            with open(temp_path_cl, "rb") as f:
+                                cover_letter_bytes = f.read()
+                            
+                            # Clean up
+                            try:
+                                Path(temp_path_cl).unlink()
+                            except:
+                                pass
+                            
+                            # Store in session
+                            st.session_state['last_cover_letter'] = cover_letter_bytes
+                            st.session_state['last_cover_letter_timestamp'] = timestamp_cl
+                            st.session_state['cover_letter_company'] = company_name
+                            
+                            st.success(f"✅ Cover letter generated for: **{company_name or 'Hiring Manager'}**")
+                            
+                    except Exception as e:
+                        st.error(f"❌ Error generating cover letter: {str(e)}")
+                        import traceback
+                        st.code(traceback.format_exc())
+            
+            # Show download buttons if cover letter exists
+            if 'last_cover_letter' in st.session_state:
+                col_cl1, col_cl2 = st.columns(2)
+                
+                with col_cl1:
+                    # Download cover letter only
+                    st.download_button(
+                        label="⬇️ Download Cover Letter",
+                        data=st.session_state['last_cover_letter'],
+                        file_name=f"cover_letter_dilip_kumar_{st.session_state['last_cover_letter_timestamp']}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key="download_cover_letter"
+                    )
+                
+                with col_cl2:
+                    # Download both resume and cover letter as ZIP
+                    if 'last_generated_resume' in st.session_state:
+                        import zipfile
+                        from io import BytesIO
+                        
+                        # Create ZIP file in memory
+                        zip_buffer = BytesIO()
+                        resume_ts = st.session_state.get('last_resume_timestamp', datetime.now().strftime("%Y%m%d_%H%M%S"))
+                        cover_ts = st.session_state.get('last_cover_letter_timestamp', datetime.now().strftime("%Y%m%d_%H%M%S"))
+                        
+                        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                            # Add resume
+                            zip_file.writestr(
+                                f"resume_dilip_kumar_tc_{resume_ts}.docx",
+                                st.session_state['last_generated_resume']
+                            )
+                            # Add cover letter
+                            zip_file.writestr(
+                                f"cover_letter_dilip_kumar_{cover_ts}.docx",
+                                st.session_state['last_cover_letter']
+                            )
+                        
+                        st.download_button(
+                            label="📦 Download Both (ZIP)",
+                            data=zip_buffer.getvalue(),
+                            file_name=f"application_package_{cover_ts}.zip",
+                            mime="application/zip",
+                            use_container_width=True,
+                            key="download_both_zip"
+                        )
+                    else:
+                        st.info("💡 Generate resume first, then download both together")
             
             # Save optimized content
             st.markdown("---")
@@ -1111,7 +1249,7 @@ with col2:
                 st.download_button(
                     label="⬇️ Download Resume",
                     data=resume_bytes,
-                    file_name=f"resume_{timestamp}.docx",
+                    file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     use_container_width=True,
                     key=f"download_resume_{timestamp}"

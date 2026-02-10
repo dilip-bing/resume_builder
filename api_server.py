@@ -19,6 +19,7 @@ import secrets
 # Import existing resume builder components
 from gemini_optimizer import GeminiATSOptimizer
 from enhanced_format_system import EnhancedFormatBuilder
+from cover_letter_generator import CoverLetterGenerator
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -106,6 +107,22 @@ class OptimizeRequest(BaseModel):
             }
         }
 
+class CoverLetterRequest(BaseModel):
+    job_description: str
+    resume_text: str = ""  # Optimized resume content for additional context (optional)
+    context: str = ""  # Additional context like career passion areas (optional)
+    return_format: str = "file"  # "file" or "base64"
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "job_description": "We are looking for a Senior Software Engineer with experience in Python, React, AWS...",
+                "resume_text": "Experienced Software Engineer with 3+ years...",
+                "context": "Passionate about cloud infrastructure and DevOps",
+                "return_format": "file"
+            }
+        }
+
 class OptimizeResponse(BaseModel):
     status: str
     message: str
@@ -114,6 +131,14 @@ class OptimizeResponse(BaseModel):
     match_score: Optional[str] = None
     keywords_added: Optional[int] = None
     resume_base64: Optional[str] = None
+
+class CoverLetterResponse(BaseModel):
+    status: str
+    message: str
+    download_url: Optional[str] = None
+    filename: str
+    company_name: Optional[str] = None
+    cover_letter_base64: Optional[str] = None  # Only present if return_format="base64"
 
 # Health check endpoint
 @app.get("/")
@@ -211,6 +236,7 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
         # Generate resume document
         print(f"[API] Generating resume document...")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename_base = f"resume_dilip_kumar_tc_{timestamp}"
         
         # Create temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
@@ -239,7 +265,7 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
             return OptimizeResponse(
                 status="success",
                 message="Resume optimized successfully",
-                filename=f"resume_optimized_{timestamp}.docx",
+                filename=f"{filename_base}.docx",
                 match_score=report.get('match_score_estimate', 'Unknown'),
                 keywords_added=len(report.get('keywords_added', [])),
                 resume_base64=resume_base64
@@ -250,7 +276,7 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
             output_dir = Path("output/api_generated")
             output_dir.mkdir(parents=True, exist_ok=True)
             
-            output_file = output_dir / f"resume_optimized_{timestamp}.docx"
+            output_file = output_dir / f"{filename_base}.docx"
             
             # Copy from temp to output
             import shutil
@@ -309,6 +335,128 @@ async def download_resume(filename: str, api_key: str = Depends(verify_api_key))
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename=filename
     )
+
+@app.post("/api/v1/generate-cover-letter", response_model=CoverLetterResponse)
+async def generate_cover_letter(request: CoverLetterRequest, api_key: str = Depends(verify_api_key)):
+    """
+    Generate AI-powered cover letter for a job description
+    
+    **Authentication:** Requires X-API-Key header
+    
+    **Parameters:**
+    - job_description: Full text of the job posting
+    - resume_text: Optimized resume content (optional, for better context)
+    - context: Additional context like career goals (optional, default: tech passion)
+    - return_format: "file" (download link) or "base64" (embedded in response)
+    
+    **Returns:**
+    - status: "success" or "error"
+    - message: Human-readable message
+    - download_url: URL to download cover letter (if return_format="file")
+    - filename: Generated filename
+    - company_name: Extracted company name or "Hiring Manager"
+    - cover_letter_base64: Base64-encoded cover letter (if return_format="base64")
+    
+    **Note:** 
+    - Applicant info is pre-configured: Dilip Kumar Thirukonda Chandrasekaran
+    - Contact: (607) 624-9390 | dthirukondac@binghamton.edu
+    """
+    
+    try:
+        print(f"\n[API] Received cover letter generation request")
+        print(f"[API] Job description length: {len(request.job_description)} characters")
+        
+        # Validate API key
+        if not GEMINI_API_KEY:
+            raise HTTPException(
+                status_code=500,
+                detail="GEMINI_API_KEY not configured. Set environment variable GEMINI_API_KEY."
+            )
+        
+        # Initialize cover letter generator
+        print(f"[API] Initializing cover letter generator...")
+        generator = CoverLetterGenerator(api_key=GEMINI_API_KEY)
+        
+        # Generate cover letter (uses simple builder with metadata)
+        print(f"[API] Generating AI-powered cover letter...")
+        doc, company_name = generator.create_cover_letter_docx(
+            job_description=request.job_description,
+            resume_text=request.resume_text or "",
+            context=request.context or "Passionate about technology and eager to contribute to innovative projects"
+        )
+        
+        print(f"[API] Cover letter generated!")
+        print(f"[API] Company: {company_name or 'Hiring Manager'}")
+        
+        # Generate timestamp and filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename_base = f"cover_letter_dilip_kumar_{timestamp}"
+        
+        # Create temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as tmp_file:
+            temp_path = tmp_file.name
+        
+        # Save document
+        doc.save(temp_path)
+        print(f"[API] Cover letter saved: {temp_path}")
+        
+        # Prepare response based on return format
+        if request.return_format == "base64":
+            # Return base64-encoded file
+            import base64
+            with open(temp_path, "rb") as f:
+                cover_letter_bytes = f.read()
+            cover_letter_base64 = base64.b64encode(cover_letter_bytes).decode('utf-8')
+            
+            # Clean up temp file
+            try:
+                Path(temp_path).unlink()
+            except:
+                pass
+            
+            return CoverLetterResponse(
+                status="success",
+                message="Cover letter generated successfully (55-word paragraphs, exact template formatting)",
+                filename=f"{filename_base}.docx",
+                company_name=company_name,
+                cover_letter_base64=cover_letter_base64
+            )
+        
+        else:  # return_format == "file"
+            # Save to output directory for download
+            output_dir = Path("output/api_generated")
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            output_file = output_dir / f"{filename_base}.docx"
+            
+            # Copy from temp to output
+            import shutil
+            shutil.copy2(temp_path, output_file)
+            
+            # Clean up temp file
+            try:
+                Path(temp_path).unlink()
+            except:
+                pass
+            
+            # Return file path for download
+            return CoverLetterResponse(
+                status="success",
+                message="Cover letter generated successfully (55-word paragraphs, exact template formatting)",
+                download_url=f"/api/v1/download/{output_file.name}",
+                filename=output_file.name,
+                company_name=company_name
+            )
+    
+    except Exception as e:
+        print(f"[API] ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cover letter generation failed: {str(e)}"
+        )
 
 @app.get("/api/v1/template")
 async def get_template():

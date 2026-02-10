@@ -1,0 +1,68 @@
+{
+  "header": {
+    "name": "Dilip Kumar Thirukonda Chandrasekaran",
+    "contact_line_1": "(607) 624-9390 | dthirukondac@binghamton.edu",
+    "contact_line_2": "linkedin.com/dilipkumartc | dilip-bing.github.io/portfolio/"
+  },
+  "date": "[Date]",
+  "recipient": {
+    "hiring_manager": "[Hiring Manager Name]",
+    "job_title": "[Job Title]",
+    "company_name": "[Company Name]",
+    "company_address": "[Company Address]"
+  },
+  "salutation": "Dear [Hiring Manager Name/Hiring Team],",
+  "paragraphs": {
+    "opening": {
+      "value": "[Opening paragraph will be AI-generated based on job description]",
+      "paragraph_index": 9,
+      "notes": "Express enthusiasm, mention job source, show fit, reference company"
+    },
+    "skills": {
+      "value": "[Skills paragraph will be AI-generated based on job description]",
+      "paragraph_index": 10,
+      "notes": "Highlight technical skills, experiences, achievements with metrics"
+    },
+    "achievements": {
+      "value": "[Achievements paragraph will be AI-generated based on job description]",
+      "paragraph_index": 11,
+      "notes": "Discuss projects, accomplishments, measurable impact"
+    },
+    "company_knowledge": {
+      "value": "[Company knowledge paragraph will be AI-generated based on job description]",
+      "paragraph_index": 12,
+      "notes": "Demonstrate company research, explain interest, show culture fit"
+    },
+    "closing": {
+      "value": "[Closing paragraph will be AI-generated based on job description]",
+      "paragraph_index": 13,
+      "notes": "Reiterate enthusiasm, express interest in discussion, thank them"
+    }
+  },
+  "signature": {
+    "closing_phrase": "Sincerely,",
+    "name": "Dilip Kumar Thirukonda Chandrasekaran"
+  },
+  "_metadata": {
+    "template_file": "reference_docx/cover_letter_template.docx",
+    "format_metadata_file": "metadata/cover_letter_format_metadata.json",
+    "paragraph_mapping": {
+      "0": "header.name",
+      "1": "header.contact_line_1",
+      "2": "header.contact_line_2",
+      "3": "date",
+      "4": "recipient.hiring_manager",
+      "5": "recipient.job_title",
+      "6": "recipient.company_name",
+      "7": "recipient.company_address",
+      "8": "salutation",
+      "9": "paragraphs.opening.value",
+      "10": "paragraphs.skills.value",
+      "11": "paragraphs.achievements.value",
+      "12": "paragraphs.company_knowledge.value",
+      "13": "paragraphs.closing.value",
+      "14": "signature.closing_phrase",
+      "15": "signature.name"
+    }
+  }
+}

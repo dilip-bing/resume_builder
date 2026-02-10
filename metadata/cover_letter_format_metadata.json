@@ -1,0 +1,520 @@
+{
+  "source_document": "reference_docx/cover_letter_template.docx",
+  "document_properties": {
+    "title": "",
+    "author": "Un-named",
+    "subject": "",
+    "keywords": ""
+  },
+  "section_properties": {
+    "page_height": 10058400,
+    "page_width": 7772400,
+    "top_margin": 914400,
+    "bottom_margin": 914400,
+    "left_margin": 914400,
+    "right_margin": 914400,
+    "header_distance": 449580,
+    "footer_distance": 449580,
+    "orientation": "PORTRAIT (0)"
+  },
+  "paragraph_formats": {
+    "0": {
+      "alignment": "CENTER (1)",
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "1": {
+      "alignment": "CENTER (1)",
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "2": {
+      "alignment": "CENTER (1)",
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "3": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "4": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "5": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "6": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "7": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "8": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "9": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": 1.5,
+      "line_spacing_rule": "ONE_POINT_FIVE (1)",
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "10": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": 1.5,
+      "line_spacing_rule": "ONE_POINT_FIVE (1)",
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "11": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": 1.5,
+      "line_spacing_rule": "ONE_POINT_FIVE (1)",
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "12": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": 1.5,
+      "line_spacing_rule": "ONE_POINT_FIVE (1)",
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "13": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 152400,
+      "line_spacing": 1.5,
+      "line_spacing_rule": "ONE_POINT_FIVE (1)",
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "14": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 76200,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    },
+    "15": {
+      "alignment": null,
+      "left_indent": null,
+      "right_indent": null,
+      "first_line_indent": null,
+      "space_before": null,
+      "space_after": 0,
+      "line_spacing": null,
+      "line_spacing_rule": null,
+      "keep_together": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "widow_control": null
+    }
+  },
+  "run_formats": {
+    "0": [
+      {
+        "text": "Dilip Kumar Thirukonda Chandrasekaran",
+        "bold": true,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 152400,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "1": [
+      {
+        "text": "(607) 624-9390 | dthirukondac@binghamton.edu",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "2": [
+      {
+        "text": "linkedin.com/dilipkumartc | dilip-bing.github.io/portfolio/",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "3": [
+      {
+        "text": "[Date]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "4": [
+      {
+        "text": "[Hiring Manager Name]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "5": [
+      {
+        "text": "[Job Title]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "6": [
+      {
+        "text": "[Company Name]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "7": [
+      {
+        "text": "[Company Address]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "8": [
+      {
+        "text": "Dear [Hiring Manager Name/Hiring Team],",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "9": [
+      {
+        "text": "[Opening paragraph: Express enthusiasm for the position and company. Mention how you found the job posting. Include a brief hook about why you're a strong fit. Reference the specific job title and company name.]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "10": [
+      {
+        "text": "[First body paragraph: Highlight your most relevant technical skills, experiences, and achievements that align with the job requirements. Use specific examples with metrics where possible. Connect your background to the company's needs.]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "11": [
+      {
+        "text": "[Second body paragraph: Discuss specific projects, accomplishments, or experiences that demonstrate your capabilities. Show how your work has created measurable impact. Tie this to what you can contribute to the company.]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "12": [
+      {
+        "text": "[Third body paragraph: Demonstrate knowledge of the company's mission, values, products, or recent developments. Explain why you're specifically interested in this company and how you align with their culture and goals.]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "13": [
+      {
+        "text": "[Closing paragraph: Reiterate your enthusiasm and interest. Mention that you're looking forward to discussing how you can contribute. Thank them for their consideration and time.]",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "14": [
+      {
+        "text": "Sincerely,",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ],
+    "15": [
+      {
+        "text": "Dilip Kumar Thirukonda Chandrasekaran",
+        "bold": null,
+        "italic": null,
+        "underline": null,
+        "font_name": null,
+        "font_size": 139700,
+        "font_color_rgb": null,
+        "all_caps": null,
+        "small_caps": null,
+        "strike": null,
+        "double_strike": null,
+        "subscript": null,
+        "superscript": null
+      }
+    ]
+  }
+}
