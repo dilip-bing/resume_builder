@@ -19,9 +19,9 @@ class GeminiATSOptimizer:
             import google.generativeai as genai
             genai.configure(api_key=api_key)
             
-            # Use Gemini 2.5 Pro (best quality, advanced reasoning)
+            # Use Gemini 2.0 Flash (fast and efficient)
             # Note: Must use full model name with "models/" prefix
-            self.model = genai.GenerativeModel('models/gemini-2.5-pro')
+            self.model = genai.GenerativeModel('models/gemini-2.0-flash')
             self.genai = genai
                     
         except ImportError:
@@ -64,7 +64,7 @@ class GeminiATSOptimizer:
         
         # Call Gemini API
         try:
-            print("[AI OPTIMIZER] Calling Gemini API (models/gemini-2.5-pro - Advanced Reasoning)...")
+            print("[AI OPTIMIZER] Calling Gemini API (models/gemini-2.0-flash - Fast & Efficient)...")
             print("[AI OPTIMIZER] This may take 15-45 seconds...")
             
             response = self.model.generate_content(prompt)

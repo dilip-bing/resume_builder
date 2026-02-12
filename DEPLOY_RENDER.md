@@ -48,8 +48,8 @@ Fill in these settings:
 
 **Add GEMINI_API_KEY:**
    - **Key**: `GEMINI_API_KEY`
-   - **Value**: `AIzaSyA3_TlXuEFkCnTN55CrhfusNffMCqXmzDA` (your key)
-   - Click **"Add"**
+   - **Value**: `your-gemini-api-key-here`
+   - Click **"Add"****
 
 **Add API_SECRET_KEY** (for authentication):
    - Click **"Add Environment Variable"** again

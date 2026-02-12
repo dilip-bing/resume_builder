@@ -40,8 +40,8 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 Edit `.streamlit/secrets.toml`:
 
 ```toml
-GEMINI_API_KEY = "AIzaSyA3_TlXuEFkCnTN55CrhfusNffMCqXmzDA"
-API_SECRET_KEY = "Xk7mP9nQ2rU5wY8zB1cD4fG6hJ0kL3mN5pR7sT9vW2xZ4aE6gI8jK0m"  # Your key here
+GEMINI_API_KEY = "your-gemini-api-key-here"
+API_SECRET_KEY = "your-generated-secret-key-here"
 ```
 
 ### Step 3: Update Your Scripts

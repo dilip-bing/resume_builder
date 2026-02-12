@@ -43,7 +43,7 @@ if missing_keys:
     
     if "GEMINI_API_KEY" in missing_keys:
         print("\n📝 GEMINI_API_KEY (Google AI):")
-        print("   Your existing key: AIzaSyA3_TlXuEFkCnTN55CrhfusNffMCqXmzDA")
+        print("   Get your key from: https://aistudio.google.com/app/apikey")
     
     if "API_SECRET_KEY" in missing_keys:
         # Generate a recommended secret key

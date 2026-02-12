@@ -31,7 +31,7 @@ class CoverLetterGenerator:
             genai.configure(api_key=api_key)
         
         # Configure AI model (use same model as optimizer)
-        self.model = genai.GenerativeModel('models/gemini-2.5-pro')
+        self.model = genai.GenerativeModel('models/gemini-2.0-flash')
         
     def extract_company_name(self, job_description):
         """Extract company name from job description using AI"""

@@ -28,7 +28,7 @@ Access the Resume Optimizer API from **anywhere** (turn on whenever/wherever you
    - Instance Type: FREE
 6. Add Environment Variable:
    - Key: GEMINI_API_KEY
-   - Value: AIzaSyA3_TlXuEFkCnTN55CrhfusNffMCqXmzDA
+   - Value: your-gemini-api-key-here
 7. Click "Create Web Service"
 8. Wait 2-3 minutes
 9. Get your URL: https://resume-optimizer-api.onrender.com
