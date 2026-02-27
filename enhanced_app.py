@@ -198,7 +198,7 @@ with tab_ai:
         st.info("Try reinstalling: `pip install --upgrade google-generativeai`")
     
     if api_configured:
-        st.success("✅ Gemini Pro 2.5 configured and ready (Advanced reasoning model)")
+        st.success("✅ Gemini 3 Flash Preview configured and ready")
         
         # Check if there are existing optimization results in session state
         if 'optimization_done' in st.session_state and st.session_state['optimization_done']:
