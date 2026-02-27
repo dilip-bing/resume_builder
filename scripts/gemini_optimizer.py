@@ -175,12 +175,18 @@ class GeminiATSOptimizer:
         return "\n".join(text_parts)
     
     def _calculate_char_limits(self, resume_content: Dict) -> Dict:
-        """Calculate character limits for all resume fields with 25% safety buffer"""
+        """
+        Calculate character limits for all resume fields.
+
+        We apply a safety buffer so the model never exceeds the visual limit,
+        but we still want the generated text to be close to a full line.
+        """
         limiter = get_limiter()
         limits = {}
         
-        # Apply 20% safety buffer to all limits (e.g., 100 char limit -> 80 char max for AI)
-        SAFETY_BUFFER = 0.80
+        # Apply 5% safety buffer to all limits (e.g., 100 char limit -> 95 char max for AI)
+        # The prompt will instruct the model to target 90–95% of these limits.
+        SAFETY_BUFFER = 0.95
         
         # Skills section (languages, software, tools) - with 20% buffer for safety
         if "skills" in resume_content and isinstance(resume_content["skills"], dict):
@@ -260,8 +266,15 @@ class GeminiATSOptimizer:
                 tool_data = skills["tools"]
                 current_tools = tool_data.get("value", "") if isinstance(tool_data, dict) else str(tool_data)
         
-        # Format character limits for prompt
-        limits_info = "\n".join([f"  - {field}: MAX {limit} characters" for field, limit in char_limits.items()])
+        # Format character limits for prompt with explicit 90–95% target range
+        limit_lines = []
+        for field, limit in char_limits.items():
+            min_chars = int(limit * 0.90)
+            max_chars = int(limit * 0.95)
+            limit_lines.append(
+                f"  - {field}: TARGET {min_chars}-{max_chars} characters (HARD MAX {limit})"
+            )
+        limits_info = "\n".join(limit_lines)
         
         prompt = f"""You are an expert ATS (Applicant Tracking System) resume optimizer. Your PRIMARY goal is to achieve 95%+ keyword match using an ADDITIVE strategy - ADD keywords to existing content, don't replace unless necessary.
 
@@ -278,15 +291,17 @@ CURRENT RESUME (in JSON format):
 
 *** CRITICAL: CHARACTER LIMIT CONSTRAINTS ***
 Each field has a STRICT character limit based on pixel-perfect formatting.
-These limits include a 20% safety buffer - YOU MUST STAY UNDER THESE LIMITS!
+For each field, you MUST:
+- Use AT LEAST 90% of the target characters
+- Not exceed 95% of the target characters
+The values below show the TARGET RANGE and the HARD MAX for each field.
 {limits_info}
 
-*** ABSOLUTE REQUIREMENT: NEVER EXCEED THESE CHARACTER LIMITS! ***
-If you exceed ANY limit, the resume formatting will break and be rejected.
-Count characters carefully BEFORE finalizing each field.
-When adding keywords, COUNT the total length - if you're over, REMOVE keywords until under limit.
-Better to have fewer keywords than to exceed the limit!
-The limits shown are MAXIMUM - aim for 5-10 chars BELOW each limit for safety.
+*** ABSOLUTE REQUIREMENTS ***
+- NEVER EXCEED THE HARD MAX CHARACTERS FOR ANY FIELD.
+- GENERATE TEXT IN THE 90–95% RANGE OF THE TARGET FOR EVERY FIELD.
+If you are under 90% of the target for a field, ADD more relevant keywords or detail
+until you reach the 90–95% range without crossing the hard maximum.
 
 *** OPTIMIZATION PRIORITY (IN THIS EXACT ORDER) ***:
 1. **SKILLS SECTION MODIFICATION IS MANDATORY** (skills.languages, skills.software, skills.tools)

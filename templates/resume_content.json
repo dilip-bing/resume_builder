@@ -58,17 +58,17 @@
   ],
   "skills": {
     "languages": {
-      "value": "Python, R, SQL, C++, JavaScript, Java, MATLAB",
+      "value": "Java, Python, C++, C, SQL, R, MATLAB, JavaScript, Shell, XML, PDDL, CSS, Kotlin, Verilog, Go",
       "paragraph_index": 12,
       "label": "Languages"
     },
     "software": {
-      "value": "PyTorch, TensorFlow, LaTeX, GitHub, Azure, Analytics",
+      "value": "MATLAB, Simulink, Docker, Git, Linux, Gazebo, Jupyter, PyTorch, ROS 2, JAX, Keras, GDB, CAD",
       "paragraph_index": 13,
       "label": "Software"
     },
     "tools": {
-      "value": "Responsible AI, Empirical Social Science, HCI, AI Ethics, R&D, Research Synthesis, Cross-group Collaboration, Qualitative, Quantitative, AI Policy",
+      "value": "AI, Robotics, Controls, Optimization, LEAN, Data Analytics, Scientific Reasoning, R&D, Modeling, Industrial Research, Energy Transition, Decarbonization, OT Security, Zero-Carbon, GE Vernova Way, Innovation",
       "paragraph_index": 14,
       "label": "Tools"
     }
@@ -84,20 +84,20 @@
       "location": "Chennai, India",
       "dates": "January 2020 – July 2025",
       "tech_stack": {
-        "value": "C++, JS, R&D, Agile, Docker, Cross-group Collaboration, AI Strategy, Responsible AI, Empirical Methods, Innovation, Research Synthesis, Policy",
+        "value": "Android SDK, C++, Gradle, Selenium, React.js, MongoDB, Docker, HTML, CSS, JS, Shell, Data Analytics, R&D, LEAN, Industrial Research, Controls, Scientific Reasoning, AI, Optimization",
         "paragraph_index": 18
       },
       "bullets": [
         {
-          "value": "Architected software, collaborating with researchers on frontiers of science and complex challenges through original research and R&D syntheses.",
+          "value": "Architected custom Android Research SDK with safety and precision protocols, establishing technical excellence and scientific reasoning for industrial research, decarbonization, and energy transition.",
           "paragraph_index": 19
         },
         {
-          "value": "Authored peer-reviewed publications and R&D syntheses for AI frontiers.",
+          "value": "Authored 50,000+ UI/E2E cases for mobile/web, applying scientific reasoning and LEAN methodologies.",
           "paragraph_index": 20
         },
         {
-          "value": "Collaborated cross-group to design R&D software, driving innovation for complex sociotechnical issues and societal influences of responsible AI.",
+          "value": "Developed research environments for mobile/web, providing infrastructure to execute projects, analyze data, and drive interpretation for next-gen zero-carbon product advances using LEAN methodologies.",
           "paragraph_index": 21
         }
       ]
@@ -106,92 +106,92 @@
   "projects": [
     {
       "header_line": {
-        "value": "Test-Lab, Team Lead & Co-Developer                       \t                                                                      September 2024 – July 2025",
+        "value": "LLM-Native Web Automation Framework, Independent Open-Source Project                                                      February 2026",
         "paragraph_index": 24
       },
-      "name": "Test-Lab",
-      "role": "Team Lead & Co-Developer",
-      "dates": "September 2024 – July 2025",
+      "name": "LLM-Native Web Automation Framework",
+      "role": "Independent Open-Source Project",
+      "dates": "February 2026",
       "tech_stack": {
-        "value": "R&D, Agile, Responsible AI, HCI, Cloud Platforms, AI Agents",
+        "value": "Python, LangChain, OpenAI API, Playwright, REST APIs",
         "paragraph_index": 25
       },
       "bullets": [
         {
-          "value": "Led research strategy, collaborating in cross-functional teams for HCI design, empirical research, and R&D data management for AI frontiers.",
+          "value": "Replaced traditional Selenium-based web automation with an LLM-driven action and sub-action execution engine, enabling dynamic interaction with web elements without brittle CSS selectors or XPath dependencies.",
           "paragraph_index": 26
         },
         {
-          "value": "Deployed research-driven automation for inquiry into complex software cycles and cross-group technical evaluations of responsible AI applications.",
+          "value": "Open-sourced a modular framework abstracting LLM reasoning into reusable action primitives for task-agnostic automation.",
           "paragraph_index": 27
         }
       ]
     },
     {
       "header_line": {
-        "value": "3D Printer & Scanner, Team Project\t                       \t\t\t          \t             \t         January 2019 – February 2019",
+        "value": "Neuro-Symbolic Planning via Adversarial Repair and Compilation, Individual Project                                        January 2026 – Present",
         "paragraph_index": 28
       },
-      "name": "3D Printer & Scanner",
-      "role": "Team Project",
-      "dates": "January 2019 – February 2019",
+      "name": "Neuro-Symbolic Planning via Adversarial Repair and Compilation",
+      "role": "Individual Project",
+      "dates": "January 2026 – Present",
       "tech_stack": {
-        "value": "C++, R&D, AI, 3D Visualization, Responsible AI, Innovation",
+        "value": "Python, LLaMA 3, Fast Downward, PDDL, LangChain",
         "paragraph_index": 29
       },
       "bullets": [
         {
-          "value": "Engineered 3D models via original research, inquiry, and development.",
+          "value": "Engineered a closed-loop planning system that reframes LLM hallucination as a code repair problem, using an Adversarial Critic LLM to parse symbolic errors and iteratively regenerate valid PDDL from natural language goals.",
           "paragraph_index": 30
         },
         {
-          "value": "Won top rank for original research, inquiry, and technical innovation.",
+          "value": "Benchmarked on IPC datasets, outperforming zero-shot LLM baselines through compiler-guided adversarial feedback loops.",
           "paragraph_index": 31
         }
       ]
     },
     {
       "header_line": {
-        "value": "Obstacle Avoiding Robot, Team Project     \t\t\t\t   \t                       October 2016 – November 2016",
+        "value": "Natural Language to Behavior Tree Compiler, Team Project                                                                 January 2026 – Present",
         "paragraph_index": 32
       },
-      "name": "Obstacle Avoiding Robot",
+      "name": "Natural Language to Behavior Tree Compiler",
       "role": "Team Project",
-      "dates": "October 2016 – November 2016",
+      "dates": "January 2026 – Present",
       "tech_stack": {
-        "value": "C++, R&D, AI Agents, Real-Time Systems, Embedded Systems",
+        "value": "Python, GPT-4/Claude, ROS 2, py_trees_ros, XML, Gazebo",
         "paragraph_index": 33
       },
       "bullets": [
         {
-          "value": "Developed C++ algorithms for autonomous AI agents, showcasing strong inquiry and theory skills within a collaborative research-driven environment.",
+          "value": "Architected a three-stage neuro-symbolic pipeline translating plain English commands into verified, executable Behavior Tree XML for autonomous robots, eliminating the need for expert programmers in task specification.",
           "paragraph_index": 34
         },
         {
-          "value": "Secured top ranking for robotics design, demonstrating attention to detail and contributions to peer-reviewed technical research and findings.",
+          "value": "Built a formal verification engine enforcing five safety constraints with auto-repair, feedback, and zero false negatives.",
           "paragraph_index": 35
         }
       ]
     },
     {
       "header_line": {
-        "value": "Earthworm - Plant and Disease Detection System, Team Project\t                       \t                                                September 2018",
+        "value": "Test-Lab, Team Lead & Co-Developer                                                                                       September 2024 – July 2025",
         "paragraph_index": 36
       },
-      "name": "Earthworm - Plant and Disease Detection System",
-      "role": "Team Project",
-      "dates": "September 2018",
+      "name": "Test-Lab",
+      "role": "Team Lead & Co-Developer",
+      "dates": "September 2024 – July 2025",
       "tech_stack": {
-        "value": "Python, TensorFlow, GenAI, Responsible AI, Machine Learning",
+        "value": "React, MongoDB, Shell Scripting, Android Emulator, Docker, REST APIs",
         "paragraph_index": 37
       },
       "bullets": [
         {
-          "value": "Created Responsible AI tools for peer-reviewed research publications.",
+          "value": "Directed the full lifecycle of a cloud-based testing infrastructure to validate application performance, organizing distinct teams across UI design, script writing, and database management from ideation to deployment.",
           "paragraph_index": 38
         },
         {
-          "value": "Attained 95% accuracy via original research and empirical methods.",
+          "value": "Devised a custom Mobile Farm site from scratch to host both virtual and real devices, enabling the execution of automation and manual testing cycles.",
           "paragraph_index": 39
         }
       ]
@@ -208,7 +208,7 @@
       "dates": "January 2023 – July 2025",
       "bullets": [
         {
-          "value": "Led cross-functional teams, driving R&D strategy and innovation through technical documentation and responsible AI research and methodologies.",
+          "value": "Led and mentored a cross-functional team of 10 engineers in software development and robotics, driving project delivery via LEAN and Agile while fostering technical excellence and scientific reasoning.",
           "paragraph_index": 43
         }
       ]
@@ -223,7 +223,7 @@
       "dates": "January 2024 – July 2025",
       "bullets": [
         {
-          "value": "Directed strategy for teams, implementing technical documentation to strengthen R&D and ensure responsible AI and software research outcomes.",
+          "value": "Directed the research lifecycle and task allocation for distributed teams, implementing LEAN, operational excellence, and technical documentation to deliver next-generation energy product advancements.",
           "paragraph_index": 45
         }
       ]

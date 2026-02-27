@@ -1,13 +1,21 @@
 """
 Enhanced Format Preservation System with Metadata Storage
 Saves ALL formatting properties to a metadata JSON file for perfect replication.
+
+IMPORTANT - DO NOT CHANGE IN FUTURE:
+- Font style, size, spacing, and all formatting MUST come from metadata/reference only.
+- Do not hardcode font names, sizes, or spacing in generation.
+- Do not add logic that overrides or alters paragraph/run format from metadata.
+- Preserve exact replication: content is replaced, formatting is always from metadata.
 """
 
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+from docx.oxml.ns import qn
 import json
 import shutil
+import zipfile
 from typing import Dict, Any
 from pathlib import Path
 
@@ -359,9 +367,47 @@ class EnhancedFormatBuilder:
         run1.text = value
         self.apply_run_format_from_metadata(run1, para_idx, 1)
     
+    def _remove_trailing_empty_paragraphs(self, doc: Document) -> None:
+        """Remove empty paragraphs immediately before sectPr to avoid a blank second page."""
+        body = doc._element.body
+        children = list(body)
+        if len(children) < 2:
+            return
+        # Last element is usually sectPr; one before may be empty p
+        last = children[-1]
+        prev = children[-2]
+        if last.tag != qn("w:sectPr") or prev.tag != qn("w:p"):
+            return
+        text = "".join(prev.itertext()).strip()
+        if not text:
+            body.remove(prev)
+    
+    def _apply_document_protection(self, docx_path: str) -> None:
+        """Set document to read-only so layout is protected (lock first page)."""
+        try:
+            with zipfile.ZipFile(docx_path, "r") as z:
+                settings_xml = z.read("word/settings.xml").decode("utf-8")
+                names = z.namelist()
+                read_as_bytes = {name: z.read(name) for name in names}
+            if "documentProtection" in settings_xml:
+                return
+            idx = settings_xml.find("<w:settings")
+            if idx == -1:
+                return
+            end_tag = settings_xml.index(">", idx) + 1
+            protection = '<w:documentProtection w:edit="readOnly"/>'
+            new_xml = settings_xml[:end_tag] + protection + settings_xml[end_tag:]
+            read_as_bytes["word/settings.xml"] = new_xml.encode("utf-8")
+            with zipfile.ZipFile(docx_path, "w", zipfile.ZIP_DEFLATED) as z:
+                for name in names:
+                    z.writestr(name, read_as_bytes[name])
+        except Exception:
+            pass  # Non-fatal: resume still saved
+    
     def build_resume_from_json(self, json_data: Dict[str, Any], output_path: str = "output/resume.docx") -> str:
         """
         Build resume using format metadata for perfect replication.
+        All font style, size, spacing, and formatting come from metadata only - never override.
         """
         # DEBUG: Log what skills we're receiving
         if 'skills' in json_data:
@@ -427,13 +473,15 @@ class EnhancedFormatBuilder:
                 # Education 1 (para 4): Full line with university + degree + dates
                 # Education 2 (para 7): Only university name (skip this, use para 8 instead)
                 if idx == 0:
-                    # First education: Write full line with multirun formatting
+                    # First education: Match template exactly - degree + tab/spacing in run 2, dates in run 3
+                    # Use non-breaking space in dates so "2027" does not wrap to next line
+                    # Non-breaking space between May and 2027 so "2027" does not wrap to next line
+                    dates_no_wrap = dates.replace("May 2027", "May\u00A02027") if dates else dates
                     text_parts = [
                         (university, 0),  # Bold
-                        ("                                                          ", 1),  # Spacing
-                        (degree, 2),  # Italic
-                        ("\t                                                      \t                ", 3),  # Spacing
-                        (dates, 5)  # Italic
+                        ("                                                          ", 1),  # Spacing (exact like template)
+                        (degree + "\t                                                      \t                ", 2),  # Italic degree + spacing
+                        (dates_no_wrap, 3)  # Italic (run 3 = dates in template)
                     ]
                     self.replace_paragraph_multirun_with_metadata(para_idx, text_parts, target_doc)
                     changes.append(f"EDU_INST (para {para_idx})")
@@ -547,7 +595,9 @@ class EnhancedFormatBuilder:
                     print(f"   [WARNING] Skipping professional tech_stack - no valid paragraph_index")
                     continue
                 para_idx = tech_data["paragraph_index"]
-                self.replace_skill_line_with_metadata(para_idx, "Tech Stack", tech_data["value"], target_doc)
+                # Reference has single run (italic, TNR, same size) for whole line - use replace_paragraph so format matches exactly
+                tech_line = f"Tech Stack: {tech_data['value']}"
+                self.replace_paragraph_with_metadata(para_idx, tech_line, target_doc)
                 changes.append(f"PROF_TECH (para {para_idx})")
             
             for bullet in job.get("bullets", []):
@@ -568,55 +618,22 @@ class EnhancedFormatBuilder:
                 role = proj.get("role", "")
                 dates = proj.get("dates", "")
                 
-                # Different projects have different run structures
-                # Para 24 (Test-Lab): Run 0 bold name, Run 1 italic role, Run 2 normal spacing, Run 3 italic date
-                # Para 28 (3D Printer): Run 0 bold name, Run 1 space, Run 2 italic role, Run 10 italic dates
-                # Para 32 (Obstacle): Run 0 bold name, Run 1 italic role+spaces, Run 6 italic dates  
-                # Para 36 (Earthworm): Run 0 bold name, Run 1 space, Run 2 italic role, Run 6 italic date
-                
-                if para_idx == 24:
-                    # Test-Lab structure
-                    text_parts = [
-                        (f"{name}, ", 0),  # Bold
-                        (f"{role} ", 1),  # Italic
-                        ("                       \t                                                                      ", 2),  # Normal spacing
-                        (dates, 3)  # Italic
-                    ]
-                elif para_idx == 28:
-                    # 3D Printer structure
-                    text_parts = [
-                        (f"{name},", 0),  # Bold
-                        (" ", 1),  # Normal space
-                        (f"{role}", 2),  # Italic
-                        ("\t                       \t\t\t          \t             \t         ", 3),  # Normal+italic spacing
-                        (dates, 10)  # Italic dates
-                    ]
-                elif para_idx == 32:
-                    # Obstacle Avoiding Robot structure
-                    text_parts = [
-                        (f"{name}, ", 0),  # Bold
-                        (f"{role}     \t\t\t\t   \t                       ", 1),  # Italic role+tabs
-                        (dates, 6)  # Italic dates
-                    ]
-                elif para_idx == 36:
-                    # Earthworm structure
-                    text_parts = [
-                        (f"{name},", 0),  # Bold
-                        (" ", 1),  # Normal space
-                        (f"{role}", 2),  # Italic
-                        ("\t                       \t                                                ", 3),  # Spacing
-                        (dates, 6)  # Italic date
-                    ]
-                else:
-                    # Default structure (fallback)
-                    text_parts = [
-                        (f"{name}, ", 0),  # Bold
-                        (f"{role} ", 1),  # Italic
-                        ("                       \t                                                                      ", 2),  # Normal spacing
-                        (dates, 3)  # Italic
-                    ]
+                # All four project title lines use the same 4-run structure (per format_metadata run_formats):
+                # Run 0: bold title, Run 1: italic role, Run 2: tab only, Run 3: italic date
+                title_text = f"{name}, "
+                text_parts = [
+                    (title_text, 0),   # Bold
+                    (role, 1),         # Italic
+                    ("\t", 2),         # Tab (right-aligned tab stop in docx)
+                    (dates, 3)         # Italic
+                ]
                 
                 self.replace_paragraph_multirun_with_metadata(para_idx, text_parts, target_doc)
+                # Ensure right-aligned tab stop so date aligns like reference (11154 DXA = 557.7 pt)
+                para = target_doc.paragraphs[para_idx]
+                tab_stops = para.paragraph_format.tab_stops
+                if not any(ts.alignment == WD_TAB_ALIGNMENT.RIGHT for ts in tab_stops):
+                    tab_stops.add_tab_stop(Pt(11154 / 20), WD_TAB_ALIGNMENT.RIGHT)
                 changes.append(f"PROJ_HEADER (para {para_idx})")
             
             if "tech_stack" in proj and proj["tech_stack"]:
@@ -680,8 +697,14 @@ class EnhancedFormatBuilder:
                 self.replace_paragraph_with_metadata(para_idx, bullet["value"], target_doc)
                 changes.append(f"LEAD_BULLET (para {para_idx})")
         
+        # Remove trailing empty paragraph(s) so no second blank page
+        self._remove_trailing_empty_paragraphs(target_doc)
+        
         # Save
         target_doc.save(output_path)
+        
+        # Lock document (read-only) so first page layout is protected
+        self._apply_document_protection(output_path)
         
         print(f"\n[OK] Resume generated: {output_path}")
         print(f"[STATS] Edits applied: {len(changes)}")

@@ -29,8 +29,9 @@ venv/
 ENV/
 env/
 
-# Streamlit secrets (contains API keys)
+# Secrets / environment files (contain API keys — never commit)
 .streamlit/secrets.toml
+.env
 
 # All generated output files
 output/**/*.docx

@@ -106,92 +106,92 @@
   "projects": [
     {
       "header_line": {
-        "value": "Test-Lab, Team Lead & Co-Developer                       \t                                                                      September 2024 – July 2025",
+        "value": "LLM-Native Web Automation Framework, Independent Open-Source Project                                                      February 2026",
         "paragraph_index": 24
       },
-      "name": "Test-Lab",
-      "role": "Team Lead & Co-Developer",
-      "dates": "September 2024 – July 2025",
+      "name": "LLM-Native Web Automation Framework",
+      "role": "Independent Open-Source Project",
+      "dates": "February 2026",
       "tech_stack": {
-        "value": "React, MongoDB, Shell Scripting, Android Emulator, Docker, REST APIs",
+        "value": "Python, LangChain, OpenAI API, Playwright, REST APIs",
         "paragraph_index": 25
       },
       "bullets": [
         {
-          "value": "Directed the full lifecycle of a cloud-based testing infrastructure to validate application performance, organizing distinct teams across UI design, script writing, and database management from ideation to deployment",
+          "value": "Replaced traditional Selenium-based web automation with an LLM-driven action and sub-action execution engine, enabling dynamic interaction with web elements without brittle CSS selectors or XPath dependencies.",
           "paragraph_index": 26
         },
         {
-          "value": "Devised a custom Mobile Farm site from scratch to host both virtual and real devices, enabling the execution of automation and manual testing cycles",
+          "value": "Open-sourced a modular framework abstracting LLM reasoning into reusable action primitives for task-agnostic automation.",
           "paragraph_index": 27
         }
       ]
     },
     {
       "header_line": {
-        "value": "3D Printer & Scanner, Team Project\t                       \t\t\t          \t             \t         January 2019 – February 2019",
+        "value": "Neuro-Symbolic Planning via Adversarial Repair and Compilation, Individual Project                                        January 2026 – Present",
         "paragraph_index": 28
       },
-      "name": "3D Printer & Scanner",
-      "role": "Team Project",
-      "dates": "January 2019 – February 2019",
+      "name": "Neuro-Symbolic Planning via Adversarial Repair and Compilation",
+      "role": "Individual Project",
+      "dates": "January 2026 – Present",
       "tech_stack": {
-        "value": "3D CAD Software, IoT Sensors, Microcontroller Programming",
+        "value": "Python, LLaMA 3, Fast Downward, PDDL, LangChain",
         "paragraph_index": 29
       },
       "bullets": [
         {
-          "value": "Fabricated a customized 3D printer and scanner using microcontrollers to scan physical inputs and produce precise 3D models",
+          "value": "Engineered a closed-loop planning system that reframes LLM hallucination as a code repair problem, using an Adversarial Critic LLM to parse symbolic errors and iteratively regenerate valid PDDL from natural language goals.",
           "paragraph_index": 30
         },
         {
-          "value": "Secured a top ranking in a NIT competition, recognized for innovative design and technical implementation",
+          "value": "Benchmarked on IPC datasets, outperforming zero-shot LLM baselines through compiler-guided adversarial feedback loops.",
           "paragraph_index": 31
         }
       ]
     },
     {
       "header_line": {
-        "value": "Obstacle Avoiding Robot, Team Project     \t\t\t\t   \t                       October 2016 – November 2016",
+        "value": "Natural Language to Behavior Tree Compiler, Team Project                                                                 January 2026 – Present",
         "paragraph_index": 32
       },
-      "name": "Obstacle Avoiding Robot",
+      "name": "Natural Language to Behavior Tree Compiler",
       "role": "Team Project",
-      "dates": "October 2016 – November 2016",
+      "dates": "January 2026 – Present",
       "tech_stack": {
-        "value": "C++, Embedded Systems, Microcontroller Programming, Real-Time Systems, Autonomous Navigation",
+        "value": "Python, GPT-4/Claude, ROS 2, py_trees_ros, XML, Gazebo",
         "paragraph_index": 33
       },
       "bullets": [
         {
-          "value": "Developed custom algorithm enabling autonomous obstacle avoidance with real-time decision-making capabilities using embedded systems and sensor fusion",
+          "value": "Architected a three-stage neuro-symbolic pipeline translating plain English commands into verified, executable Behavior Tree XML for autonomous robots, eliminating the need for expert programmers in task specification.",
           "paragraph_index": 34
         },
         {
-          "value": "Secured top ranking in a PHYSICA’16 competition, recognized for innovative robotics design and autonomous navigation implementation",
+          "value": "Built a formal verification engine enforcing five safety constraints with auto-repair, feedback, and zero false negatives.",
           "paragraph_index": 35
         }
       ]
     },
     {
       "header_line": {
-        "value": "Earthworm - Plant and Disease Detection System, Team Project\t                       \t                                                September 2018",
+        "value": "Test-Lab, Team Lead & Co-Developer                                                                                       September 2024 – July 2025",
         "paragraph_index": 36
       },
-      "name": "Earthworm - Plant and Disease Detection System",
-      "role": "Team Project",
-      "dates": "September 2018",
+      "name": "Test-Lab",
+      "role": "Team Lead & Co-Developer",
+      "dates": "September 2024 – July 2025",
       "tech_stack": {
-        "value": "Python, TensorFlow, Deep Learning, Inception V3, Computer Vision",
+        "value": "React, MongoDB, Shell Scripting, Android Emulator, Docker, REST APIs",
         "paragraph_index": 37
       },
       "bullets": [
         {
-          "value": "Developed an AI diagnostic tool using Inception V3 to detect plant pathologies from leaf imagery",
+          "value": "Directed the full lifecycle of a cloud-based testing infrastructure to validate application performance, organizing distinct teams across UI design, script writing, and database management from ideation to deployment.",
           "paragraph_index": 38
         },
         {
-          "value": "Attained 95% accuracy across 17 disease categories by training the model on diverse datasets",
+          "value": "Devised a custom Mobile Farm site from scratch to host both virtual and real devices, enabling the execution of automation and manual testing cycles.",
           "paragraph_index": 39
         }
       ]

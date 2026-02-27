@@ -1,0 +1,19 @@
+# Resume generation: preserve formatting only
+
+## Rule
+When changing resume generation or format system code:
+
+- **Do not change** font style, font size, spacing (paragraph or line), or any formatting in future generations.
+- All formatting MUST come from `metadata/format_metadata.json` and the reference docx only.
+- Do not hardcode font names, sizes, or spacing in `scripts/enhanced_format_system.py` or elsewhere.
+- Do not add logic that overrides or alters paragraph/run format from metadata.
+- Content (text) may be replaced; formatting is always applied from metadata so the output matches the reference exactly.
+
+## Where formatting is defined
+- `metadata/format_metadata.json` – paragraph_formats, run_formats (font, size, bold, italic, spacing, etc.)
+- `reference_docx/resume_optimized_final.docx` – source of truth for layout and style
+
+## Safe changes
+- Fixing which paragraph index or run index is used for a given content block.
+- Using `replace_paragraph_with_metadata` vs multirun when the reference has a single run.
+- Adding/removing trailing empty paragraphs or document protection only; no style changes.

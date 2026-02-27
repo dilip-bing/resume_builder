@@ -1,11 +1,10 @@
 streamlit
 python-docx
 Pillow
-openai
-langchain
-langchain-openai
 google-generativeai
 fastapi
 uvicorn[standard]
 python-multipart
 toml
+python-dotenv
+slowapi
