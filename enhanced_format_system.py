@@ -147,7 +147,7 @@ class FormatMetadata:
         print(f"   Total run formats: {sum(len(runs) for runs in metadata['run_formats'].values())}")
         
         section = metadata['section_properties']
-        print(f"\n📄 Page Setup:")
+        print(f"\n[PAGE SETUP]")
         print(f"   Page size: {section['page_width']} x {section['page_height']}")
         print(f"   Margins: T={section['top_margin']}, B={section['bottom_margin']}, "
               f"L={section['left_margin']}, R={section['right_margin']}")
@@ -513,7 +513,7 @@ class EnhancedFormatBuilder:
             label = skill_data.get("label", skill_key.title())
             value = skill_data.get("value", "")
             
-            print(f"   [APPLYING] {skill_key} → para {para_idx}: {value[:80]}...")
+            print(f"   [APPLYING] {skill_key} -> para {para_idx}: {value[:80]}...")
             
             self.replace_skill_line_with_metadata(para_idx, label, value, target_doc)
             changes.append(f"SKILL_{skill_key.upper()} (para {para_idx})")
@@ -685,7 +685,7 @@ class EnhancedFormatBuilder:
         
         print(f"\n[OK] Resume generated: {output_path}")
         print(f"[STATS] Edits applied: {len(changes)}")
-        print(f"🎨 Format applied from metadata (margins, spacing, fonts, ALL properties)")
+        print(f"[FORMAT] Applied from metadata (margins, spacing, fonts, ALL properties)")
         
         return output_path
 
@@ -694,13 +694,13 @@ class EnhancedFormatBuilder:
 if __name__ == '__main__':
     import json
     
-    print("🔧 STEP 1: Extract format metadata from original resume")
+    print("[STEP 1] Extract format metadata from original resume")
     original_path = r"C:\Users\dilip\OneDrive\Desktop\ResumeBuilder\reference_docx\resume_optimized_final.docx"
     
     metadata_extractor = FormatMetadata(original_path)
     metadata_extractor.save_metadata("metadata/format_metadata.json")
     
-    print("\n🔧 STEP 2: Test building resume with metadata")
+    print("\n[STEP 2] Test building resume with metadata")
     
     # Load content JSON
     with open('templates/resume_content.json', 'r', encoding='utf-8') as f:
@@ -715,5 +715,5 @@ if __name__ == '__main__':
     output = builder.build_resume_from_json(resume_json, "output/test_metadata_output.docx")
     
     print(f"\n[OK] Test complete!")
-    print(f"📁 Output: {output}")
-    print(f"📁 Metadata: metadata/format_metadata.json")
+    print(f"[OUTPUT] {output}")
+    print(f"[METADATA] metadata/format_metadata.json")

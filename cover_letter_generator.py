@@ -31,176 +31,169 @@ class CoverLetterGenerator:
             genai.configure(api_key=api_key)
         
         # Configure AI model (use same model as optimizer)
-        self.model = genai.GenerativeModel('models/gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-3-flash-preview')
         
+    def _call_model(self, prompt, retries=3):
+        """Call the model with automatic retry on 429 rate limit errors."""
+        import time
+        from google.api_core.exceptions import ResourceExhausted
+        for attempt in range(retries):
+            try:
+                return self.model.generate_content(prompt)
+            except ResourceExhausted as e:
+                if attempt < retries - 1:
+                    wait = 30 * (attempt + 1)
+                    print(f"[RATE LIMIT] Quota exceeded. Waiting {wait}s before retry {attempt + 2}/{retries}...")
+                    time.sleep(wait)
+                else:
+                    raise
+
     def extract_company_name(self, job_description):
-        """Extract company name from job description using AI"""
-        prompt = f"""
-        Extract ONLY the company name from this job description.
-        If no company name is found, return "Unknown".
-        Return only the company name, nothing else.
-        
-        Job Description:
-        {job_description[:500]}
-        """
-        
-        try:
-            response = self.model.generate_content(prompt)
-            company = response.text.strip()
-            
-            # Clean up common AI responses
-            if any(word in company.lower() for word in ['unknown', 'not found', 'not mentioned', 'unclear']):
-                return None
-            
-            # Remove quotes and extra spaces
-            company = company.strip('"').strip("'").strip()
-            
-            return company if company else None
-        except:
-            return None
-    
+        """Extract company name from job description (no API call — regex-based)."""
+        import re
+        patterns = [
+            r'(?:at|@|with|join)\s+([A-Z][A-Za-z0-9&\s,\.]+?)(?:\s+(?:is|are|was|were|has|have)|[,\.\n]|$)',
+            r'Company(?:\s+Name)?:\s*([A-Z][A-Za-z0-9&\s,\.]+?)(?:[,\.\n]|$)',
+            r'About\s+([A-Z][A-Za-z0-9&\s]+?)(?:\s*[\n:])',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, job_description[:800])
+            if match:
+                name = match.group(1).strip().rstrip('.,')
+                if 2 < len(name) < 60:
+                    return name
+        return None
+
     def extract_job_details(self, job_description):
-        """Extract job title and hiring manager name if available"""
-        prompt = f"""
-        Extract from this job description:
-        1. Job title (the position being hired for)
-        2. Hiring manager name (if mentioned)
-        
-        Return in this exact format:
-        Job Title: [title or "Unknown"]
-        Hiring Manager: [name or "Unknown"]
-        
-        Job Description:
-        {job_description[:600]}
-        """
-        
-        try:
-            response = self.model.generate_content(prompt)
-            text = response.text.strip()
-            
-            job_title = None
-            hiring_mgr = None
-            
-            for line in text.split('\n'):
-                if line.startswith('Job Title:'):
-                    title = line.replace('Job Title:', '').strip()
-                    if title and 'unknown' not in title.lower():
-                        job_title = title
-                elif line.startswith('Hiring Manager:'):
-                    mgr = line.replace('Hiring Manager:', '').strip()
-                    if mgr and 'unknown' not in mgr.lower():
-                        hiring_mgr = mgr
-            
-            return job_title, hiring_mgr
-        except:
-            return None, None
-    
-    def generate_paragraph(self, paragraph_type, job_description, resume_text, context, company_name=None):
-        """Generate a single paragraph (max 60 words)"""
-        
-        prompts = {
-            "opening": f"""
-            Write a polished opening paragraph for a professional cover letter (MAX 55 WORDS):
-            - Express genuine enthusiasm for the specific position at {company_name or "the company"}
-            - Mention your relevant experience that makes you an excellent fit
-            - Reference the specific job title if clear from the description
-            - Skip any mention of where you found the job if not obvious
-            
-            Job Description: {job_description[:400]}
-            Company Name: {company_name or "the company"}
-            
-            Write a complete, polished paragraph. Maximum 55 words. No placeholders or examples. Professional and enthusiastic.
-            """,
-            
-            "skills": f"""
-            Write a polished skills paragraph (MAX 55 WORDS):
-            - Discuss your most relevant technical skills and experiences matching the job requirements
-            - Include specific examples with quantifiable metrics when possible
-            - Show how your background aligns with company needs
-            
-            Job Requirements: {job_description[:500]}
-            Background: {resume_text[:600]}
-            
-            Write a complete, polished paragraph. Maximum 55 words. No placeholders. Focus on concrete achievements.
-            """,
-            
-            "achievements": f"""
-            Write a polished achievements paragraph (MAX 55 WORDS):
-            - Highlight specific projects and accomplishments demonstrating your capabilities
-            - Emphasize measurable impact and concrete results
-            - Connect achievements to what you can contribute in this role
-            
-            Job Description: {job_description[:400]}
-            Experience: {resume_text[:600]}
-            
-            Write a complete, polished paragraph. Maximum 55 words. No placeholders. Focus on impact.
-            """,
-            
-            "company_knowledge": f"""
-            Write a polished company knowledge paragraph (MAX 55 WORDS):
-            - Show understanding of the company's mission, values, or work
-            - Explain why you're specifically interested in joining this company
-            - Demonstrate alignment with their culture and objectives
-            
-            Job Description: {job_description[:400]}
-            Company Name: {company_name or "the company"}
-            Additional Context: {context}
-            
-            Write a complete, polished paragraph. Maximum 55 words. No placeholders or examples. Show genuine interest.
-            """,
-            
-            "closing": f"""
-            Write a polished closing paragraph (MAX 55 WORDS):
-            - Reinforce your enthusiasm for the opportunity
-            - Express interest in discussing how you can contribute
-            - Thank them for their time and consideration
-            
-            Write a complete, polished paragraph. Maximum 55 words. No placeholders. Professional and forward-looking.
-            """
-        }
-        
-        prompt = prompts.get(paragraph_type, prompts["opening"])
-        
-        response = self.model.generate_content(prompt)
-        paragraph = response.text.strip()
-        
-        # Ensure it's under 55 words
-        words = paragraph.split()
-        if len(words) > 55:
-            paragraph = ' '.join(words[:55]) + '...'
-        
-        return paragraph
-    
+        """Extract job title and hiring manager name (no API call — regex-based)."""
+        import re
+        job_title = None
+        hiring_mgr = None
+
+        title_patterns = [
+            r'(?:Job Title|Position|Role|Title):\s*(.+)',
+            r'(?:hiring|looking for|seeking)\s+(?:a\s+)?([A-Z][A-Za-z\s]+?)(?:\s+to|\s+with|\s+who|[,\.\n])',
+        ]
+        for pattern in title_patterns:
+            match = re.search(pattern, job_description[:600], re.IGNORECASE)
+            if match:
+                title = match.group(1).strip().rstrip('.,')
+                if 2 < len(title) < 80:
+                    job_title = title
+                    break
+
+        mgr_patterns = [
+            r'(?:Hiring Manager|Contact|Recruiter|Report to):\s*([A-Z][a-z]+\s+[A-Z][a-z]+)',
+            r'(?:contact|reach out to)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)',
+        ]
+        for pattern in mgr_patterns:
+            match = re.search(pattern, job_description[:600], re.IGNORECASE)
+            if match:
+                hiring_mgr = match.group(1).strip()
+                break
+
+        return job_title, hiring_mgr
+
     def generate_cover_letter(self, job_description, resume_text="", context=""):
         """
-        Generate complete cover letter (5 paragraphs as per template)
-        
-        Args:
-            job_description (str): Full job posting
-            resume_text (str): Optimized resume content for context
-            context (str): Additional context or template instructions
-            
+        Generate a complete cover letter in a SINGLE API call.
+
         Returns:
             dict: {
                 'company_name': str,
+                'job_title': str,
+                'hiring_manager': str,
                 'paragraphs': dict,
                 'full_text': str
             }
         """
-        # Extract company name first (needed for prompts)
-        company_name = self.extract_company_name(job_description)
-        
-        # Generate each paragraph (5 paragraphs total)
-        paragraphs = {
-            'opening': self.generate_paragraph('opening', job_description, resume_text, context, company_name),
-            'skills': self.generate_paragraph('skills', job_description, resume_text, context, company_name),
-            'achievements': self.generate_paragraph('achievements', job_description, resume_text, context, company_name),
-            'company_knowledge': self.generate_paragraph('company_knowledge', job_description, resume_text, context, company_name),
-            'closing': self.generate_paragraph('closing', job_description, resume_text, context, company_name)
-        }
-        
+        prompt = f"""
+You are writing a professional cover letter. Complete ALL tasks below in ONE response.
+
+JOB DESCRIPTION:
+{job_description[:1200]}
+
+RESUME / BACKGROUND:
+{resume_text[:800]}
+
+CONTEXT: {context}
+
+Return your response using EXACTLY these labeled sections (keep labels as-is):
+
+COMPANY_NAME: [company name from job description, or Unknown]
+JOB_TITLE: [job title from job description, or Unknown]
+HIRING_MANAGER: [hiring manager name if mentioned, or Unknown]
+
+PARAGRAPH_OPENING:
+[Opening paragraph — max 55 words. Express genuine enthusiasm for the role. Mention relevant experience.]
+
+PARAGRAPH_SKILLS:
+[Skills paragraph — max 55 words. Highlight relevant technical skills with quantifiable metrics.]
+
+PARAGRAPH_ACHIEVEMENTS:
+[Achievements paragraph — max 55 words. Highlight specific projects and measurable impact.]
+
+PARAGRAPH_COMPANY_KNOWLEDGE:
+[Company knowledge paragraph — max 55 words. Show understanding of the company mission/values and your alignment.]
+
+PARAGRAPH_CLOSING:
+[Closing paragraph — max 55 words. Reinforce enthusiasm, invite discussion, thank them.]
+
+Rules: Each paragraph must be complete and polished. No placeholders. Professional tone. Max 55 words each.
+"""
+        response = self._call_model(prompt)
+        text = response.text.strip()
+
+        # Parse metadata lines
+        company_name = None
+        job_title = None
+        hiring_mgr = None
+        for line in text.split('\n'):
+            stripped = line.strip()
+            if stripped.startswith('COMPANY_NAME:'):
+                val = stripped.replace('COMPANY_NAME:', '').strip().strip('"\'')
+                if val and 'unknown' not in val.lower():
+                    company_name = val
+            elif stripped.startswith('JOB_TITLE:'):
+                val = stripped.replace('JOB_TITLE:', '').strip().strip('"\'')
+                if val and 'unknown' not in val.lower():
+                    job_title = val
+            elif stripped.startswith('HIRING_MANAGER:'):
+                val = stripped.replace('HIRING_MANAGER:', '').strip().strip('"\'')
+                if val and 'unknown' not in val.lower():
+                    hiring_mgr = val
+
+        # Fallback to regex extraction if AI didn't return them
+        if not company_name:
+            company_name = self.extract_company_name(job_description)
+        if not job_title:
+            job_title, _ = self.extract_job_details(job_description)
+
+        # Parse paragraphs
+        para_sections = ['OPENING', 'SKILLS', 'ACHIEVEMENTS', 'COMPANY_KNOWLEDGE', 'CLOSING']
+        para_map = {s: s.lower() for s in para_sections}
+        paragraphs = {}
+
+        for i, section in enumerate(para_sections):
+            marker = f'PARAGRAPH_{section}:'
+            if marker not in text:
+                continue
+            start = text.index(marker) + len(marker)
+            end = len(text)
+            for j in range(i + 1, len(para_sections)):
+                next_marker = f'PARAGRAPH_{para_sections[j]}:'
+                if next_marker in text:
+                    end = min(end, text.index(next_marker))
+            para_text = text[start:end].strip()
+            words = para_text.split()
+            if len(words) > 55:
+                para_text = ' '.join(words[:55]) + '...'
+            paragraphs[para_map[section]] = para_text
+
         return {
             'company_name': company_name,
+            'job_title': job_title,
+            'hiring_manager': hiring_mgr,
             'paragraphs': paragraphs,
             'full_text': '\n\n'.join(paragraphs.values())
         }
@@ -260,13 +253,12 @@ class CoverLetterGenerator:
         from pathlib import Path
         import tempfile
         
-        # Extract details from job description
-        company_name = self.extract_company_name(job_description)
-        job_title, hiring_mgr = self.extract_job_details(job_description)
-        
-        # Generate AI paragraphs
+        # Single API call — extracts company/job details AND generates all paragraphs
         result = self.generate_cover_letter(job_description, resume_text, context)
         paragraphs = result['paragraphs']
+        company_name = result.get('company_name')
+        job_title = result.get('job_title')
+        hiring_mgr = result.get('hiring_manager')
         
         # Create temp file
         with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tmp:
@@ -354,5 +346,5 @@ if __name__ == "__main__":
         applicant_phone="+1-234-567-8900"
     )
     
-    print(f"✅ Cover letter created: {filename}")
-    print(f"✅ Company: {company or 'Hiring Manager'}")
+    print(f"[OK] Cover letter created: {filename}")
+    print(f"[OK] Company: {company or 'Hiring Manager'}")

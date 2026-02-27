@@ -1,0 +1,39 @@
+{
+  "header": {
+    "applicant_name": "Dilip Kumar",
+    "email": "",
+    "phone": "",
+    "date": "[Current Date]"
+  },
+  "recipient": {
+    "hiring_manager": "Hiring Manager",
+    "company_name": "[Company Name]"
+  },
+  "salutation": "Dear Hiring Manager,",
+  "paragraphs": {
+    "opening": {
+      "value": "[Opening paragraph: Express enthusiasm for the position and company. Mention how you found the job posting. Include a brief hook about why you're a strong fit. Reference the specific job title and company name.]",
+      "max_chars": 400
+    },
+    "skills": {
+      "value": "[First body paragraph: Highlight your most relevant technical skills, experiences, and achievements that align with the job requirements. Use specific examples with metrics where possible. Connect your background to the company's needs.]",
+      "max_chars": 400
+    },
+    "achievements": {
+      "value": "[Second body paragraph: Discuss specific projects, accomplishments, or experiences that demonstrate your capabilities. Show how your work has created measurable impact. Tie this to what you can contribute to the company.]",
+      "max_chars": 400
+    },
+    "company_knowledge": {
+      "value": "[Third body paragraph: Demonstrate knowledge of the company's mission, values, products, or recent developments. Explain why you're specifically interested in this company and how you align with their culture and goals.]",
+      "max_chars": 400
+    },
+    "closing": {
+      "value": "[Closing paragraph: Reiterate your enthusiasm and interest. Mention that you're looking forward to discussing how you can contribute. Thank them for their consideration and time.]",
+      "max_chars": 400
+    }
+  },
+  "signature": {
+    "closing_phrase": "Sincerely,",
+    "name": "Dilip Kumar"
+  }
+}

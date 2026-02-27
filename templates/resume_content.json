@@ -58,17 +58,17 @@
   ],
   "skills": {
     "languages": {
-      "value": "Java, Python, C++, C, Kotlin, Swift, JavaScript, PHP, Shell Script",
+      "value": "Python, R, SQL, C++, JavaScript, Java, MATLAB",
       "paragraph_index": 12,
       "label": "Languages"
     },
     "software": {
-      "value": "Android Studio, Xcode, Gradle, Appium, Docker, GitHub, Linux/Unix, VS Code, Jupyter Notebook",
+      "value": "PyTorch, TensorFlow, LaTeX, GitHub, Azure, Analytics",
       "paragraph_index": 13,
       "label": "Software"
     },
     "tools": {
-      "value": "Appium, Selenium, Espresso, Kaspresso, XCTest, React, MongoDB, MySQL, Firebase, Vercel, TensorFlow, PyTorch, JAX, ROS, SLAM, Navigation, Localization, Motion Planning, AWS",
+      "value": "Responsible AI, Empirical Social Science, HCI, AI Ethics, R&D, Research Synthesis, Cross-group Collaboration, Qualitative, Quantitative, AI Policy",
       "paragraph_index": 14,
       "label": "Tools"
     }
@@ -84,20 +84,20 @@
       "location": "Chennai, India",
       "dates": "January 2020 – July 2025",
       "tech_stack": {
-        "value": "Android SDK, C++, Gradle, Espresso, Appium, Selenium, XCTest, Kaspresso, React.js, MongoDB, Docker, HTML, CSS, JavaScript, PHP, Shell Script, MySQL",
+        "value": "C++, JS, R&D, Agile, Docker, Cross-group Collaboration, AI Strategy, Responsible AI, Empirical Methods, Innovation, Research Synthesis, Policy",
         "paragraph_index": 18
       },
       "bullets": [
         {
-          "value": "Architected a custom Android Automation SDK from scratch featuring advanced safety and precision testing protocols, establishing the core framework currently utilized by the entire automation team",
+          "value": "Architected software, collaborating with researchers on frontiers of science and complex challenges through original research and R&D syntheses.",
           "paragraph_index": 19
         },
         {
-          "value": "Authored and systematized over 50,000 UI and E2E cases and numerous Unit cases for Android, iOS, and Web platforms",
+          "value": "Authored peer-reviewed publications and R&D syntheses for AI frontiers.",
           "paragraph_index": 20
         },
         {
-          "value": "Developed a complete automation environment consisting of custom mobile apps and website interfaces, providing the necessary infrastructure for developers and managers to execute runs and analyze results",
+          "value": "Collaborated cross-group to design R&D software, driving innovation for complex sociotechnical issues and societal influences of responsible AI.",
           "paragraph_index": 21
         }
       ]
@@ -113,16 +113,16 @@
       "role": "Team Lead & Co-Developer",
       "dates": "September 2024 – July 2025",
       "tech_stack": {
-        "value": "React, MongoDB, Shell Scripting, Android Emulator, Docker, REST APIs",
+        "value": "R&D, Agile, Responsible AI, HCI, Cloud Platforms, AI Agents",
         "paragraph_index": 25
       },
       "bullets": [
         {
-          "value": "Directed the full lifecycle of a cloud-based testing infrastructure to validate application performance, organizing distinct teams across UI design, script writing, and database management from ideation to deployment",
+          "value": "Led research strategy, collaborating in cross-functional teams for HCI design, empirical research, and R&D data management for AI frontiers.",
           "paragraph_index": 26
         },
         {
-          "value": "Devised a custom Mobile Farm site from scratch to host both virtual and real devices, enabling the execution of automation and manual testing cycles",
+          "value": "Deployed research-driven automation for inquiry into complex software cycles and cross-group technical evaluations of responsible AI applications.",
           "paragraph_index": 27
         }
       ]
@@ -136,16 +136,16 @@
       "role": "Team Project",
       "dates": "January 2019 – February 2019",
       "tech_stack": {
-        "value": "3D CAD Software, IoT Sensors, Microcontroller Programming",
+        "value": "C++, R&D, AI, 3D Visualization, Responsible AI, Innovation",
         "paragraph_index": 29
       },
       "bullets": [
         {
-          "value": "Fabricated a customized 3D printer and scanner using microcontrollers to scan physical inputs and produce precise 3D models",
+          "value": "Engineered 3D models via original research, inquiry, and development.",
           "paragraph_index": 30
         },
         {
-          "value": "Secured a top ranking in a NIT competition, recognized for innovative design and technical implementation",
+          "value": "Won top rank for original research, inquiry, and technical innovation.",
           "paragraph_index": 31
         }
       ]
@@ -159,16 +159,16 @@
       "role": "Team Project",
       "dates": "October 2016 – November 2016",
       "tech_stack": {
-        "value": "C++, Embedded Systems, Microcontroller Programming, Real-Time Systems, Autonomous Navigation",
+        "value": "C++, R&D, AI Agents, Real-Time Systems, Embedded Systems",
         "paragraph_index": 33
       },
       "bullets": [
         {
-          "value": "Developed custom algorithm enabling autonomous obstacle avoidance with real-time decision-making capabilities using embedded systems and sensor fusion",
+          "value": "Developed C++ algorithms for autonomous AI agents, showcasing strong inquiry and theory skills within a collaborative research-driven environment.",
           "paragraph_index": 34
         },
         {
-          "value": "Secured top ranking in a PHYSICA’16 competition, recognized for innovative robotics design and autonomous navigation implementation",
+          "value": "Secured top ranking for robotics design, demonstrating attention to detail and contributions to peer-reviewed technical research and findings.",
           "paragraph_index": 35
         }
       ]
@@ -182,16 +182,16 @@
       "role": "Team Project",
       "dates": "September 2018",
       "tech_stack": {
-        "value": "Python, TensorFlow, Deep Learning, Inception V3, Computer Vision",
+        "value": "Python, TensorFlow, GenAI, Responsible AI, Machine Learning",
         "paragraph_index": 37
       },
       "bullets": [
         {
-          "value": "Developed an AI diagnostic tool using Inception V3 to detect plant pathologies from leaf imagery",
+          "value": "Created Responsible AI tools for peer-reviewed research publications.",
           "paragraph_index": 38
         },
         {
-          "value": "Attained 95% accuracy across 17 disease categories by training the model on diverse datasets",
+          "value": "Attained 95% accuracy via original research and empirical methods.",
           "paragraph_index": 39
         }
       ]
@@ -208,7 +208,7 @@
       "dates": "January 2023 – July 2025",
       "bullets": [
         {
-          "value": "Led and mentored a cross-functional team of 10 engineers in Android development and automation, driving project delivery via Agile methodologies while fostering technical growth through code reviews and performance evaluations.",
+          "value": "Led cross-functional teams, driving R&D strategy and innovation through technical documentation and responsible AI research and methodologies.",
           "paragraph_index": 43
         }
       ]
@@ -223,7 +223,7 @@
       "dates": "January 2024 – July 2025",
       "bullets": [
         {
-          "value": "Directed the QA lifecycle and task allocation for distributed teams across mobile and web platforms, implementing operational excellence and technical documentation to strengthen engineering capabilities and ensure zero-defect releases.",
+          "value": "Directed strategy for teams, implementing technical documentation to strengthen R&D and ensure responsible AI and software research outcomes.",
           "paragraph_index": 45
         }
       ]
