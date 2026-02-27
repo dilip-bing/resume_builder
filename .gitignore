@@ -32,8 +32,17 @@ env/
 # Streamlit secrets (contains API keys)
 .streamlit/secrets.toml
 
-# Output directory
-output/generated_resumes/*.docx
+# All generated output files
+output/**/*.docx
+output/*.docx
+
+# Generated/test docx files in root
+*.docx
+!reference_docx/*.docx
+
+# Debug and log files
+bad_lines.txt
+.cleanup_log.txt
 
 # IDE
 .vscode/
@@ -41,15 +50,6 @@ output/generated_resumes/*.docx
 *.swp
 *.swo
 *~
-
-# Generated files
-template.docx
-output_resume.docx
-test_output.docx
-resume_*.docx
-
-# Keep original_resume.docx in version control
-# (it's your master source)
 
 # OS
 .DS_Store
