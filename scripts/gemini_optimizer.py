@@ -7,7 +7,10 @@ Respects character limits to prevent text overflow
 import json
 from typing import Dict, List, Tuple, Optional
 import streamlit as st
-from char_limiter import get_limiter
+try:
+    from .char_limiter import get_limiter
+except ImportError:  # pragma: no cover
+    from char_limiter import get_limiter
 
 
 class GeminiATSOptimizer:

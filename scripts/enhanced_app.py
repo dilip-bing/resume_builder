@@ -6,13 +6,22 @@ Uses metadata-based format preservation for exact replication.
 import streamlit as st
 import json
 from pathlib import Path
-from enhanced_format_system import EnhancedFormatBuilder
+try:
+    from .enhanced_format_system import EnhancedFormatBuilder
+except ImportError:  # pragma: no cover
+    from enhanced_format_system import EnhancedFormatBuilder
 from datetime import datetime
-from char_limiter import get_limiter
+try:
+    from .char_limiter import get_limiter
+except ImportError:  # pragma: no cover
+    from char_limiter import get_limiter
 
 # Conditional import for AI optimizer (only if package installed)
 try:
-    from gemini_optimizer import get_optimizer, calculate_text_preservation
+    try:
+        from .gemini_optimizer import get_optimizer, calculate_text_preservation
+    except ImportError:
+        from gemini_optimizer import get_optimizer, calculate_text_preservation
     GEMINI_AVAILABLE = True
 except ImportError as e:
     GEMINI_AVAILABLE = False

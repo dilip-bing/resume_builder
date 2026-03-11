@@ -69,6 +69,6 @@ print("=" * 65)
 print("\nPress CTRL+C to stop.\n")
 
 import uvicorn
-from api_server import app
+from scripts.api_server import app
 
 uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

@@ -17,9 +17,9 @@ import os
 import secrets
 
 # Import existing resume builder components
-from gemini_optimizer import GeminiATSOptimizer
-from enhanced_format_system import EnhancedFormatBuilder
-from cover_letter_generator import CoverLetterGenerator
+from .gemini_optimizer import GeminiATSOptimizer
+from .enhanced_format_system import EnhancedFormatBuilder
+from .cover_letter_generator import CoverLetterGenerator
 
 # Initialize FastAPI app
 app = FastAPI(

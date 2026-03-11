@@ -249,7 +249,10 @@ Rules: Each paragraph must be complete and polished. No placeholders. Profession
         Returns:
             tuple: (Document object, company_name)
         """
-        from simple_cover_letter_builder import build_cover_letter_simple
+        try:
+            from .simple_cover_letter_builder import build_cover_letter_simple
+        except ImportError:  # pragma: no cover
+            from simple_cover_letter_builder import build_cover_letter_simple
         from pathlib import Path
         import tempfile
         
