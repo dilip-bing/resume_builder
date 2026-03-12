@@ -5,6 +5,8 @@ Uses metadata-based format preservation for exact replication.
 
 import streamlit as st
 import json
+import copy
+import re
 from pathlib import Path
 try:
     from .enhanced_format_system import EnhancedFormatBuilder
@@ -74,6 +76,39 @@ try:
 except Exception as e:
     st.warning(f"⚠️ Character limiter unavailable: {e}")
     char_limiter = None
+
+
+def _extract_job_location(job_description: str) -> str:
+    """Best-effort extraction of a job location from the job description text."""
+    if not job_description:
+        return ""
+    m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", job_description)
+    if m:
+        return m.group(1).strip()
+    return ""
+
+
+def _apply_contact_location(resume_content: dict, location: str) -> None:
+    """Override the city/location in the resume contact line, if the template supports it."""
+    location = (location or "").strip()
+    if not location:
+        return
+    try:
+        contact = resume_content["personal"]["contact_line"]
+        parts = contact.get("parts", {})
+        if not isinstance(parts, dict):
+            return
+
+        parts["location"] = location
+        contact["parts"] = parts
+
+        phone = parts.get("phone", "")
+        email = parts.get("email", "")
+        linkedin = parts.get("linkedin", "")
+        portfolio = parts.get("portfolio", "")
+        contact["value"] = f"{parts['location']} | {phone} | {email} | {linkedin} | {portfolio}"
+    except Exception:
+        return
 
 # Helper function to display character counter
 def show_char_counter(prefix, current_text, field_key, original_text=""):
@@ -234,6 +269,14 @@ with tab_ai:
             placeholder="Paste the full job description including requirements, responsibilities, and qualifications...",
             help="The more complete the job description, the better the optimization"
         )
+
+        extracted_location = _extract_job_location(job_description)
+        job_location = st.text_input(
+            "Job location (optional, used to update resume contact line):",
+            value=extracted_location,
+            placeholder="e.g., San Jose, CA",
+            help="If provided (or detected from 'Location:' in the job description), replaces the city in your resume contact line for this generated resume."
+        )
         
         # Optimization button
         st.markdown("### 🎯 Step 2: Optimize Resume")
@@ -253,17 +296,24 @@ with tab_ai:
                 try:
                     st.write("📝 **Starting AI optimization...**")
                     
+                    resume_content_for_opt = copy.deepcopy(resume_data)
+                    _apply_contact_location(resume_content_for_opt, job_location)
+
                     # Run optimization
                     optimized_content, report = optimizer.optimize_resume(
                         job_description,
-                        resume_data
+                        resume_content_for_opt
                     )
+
+                    # Ensure location override is reflected in the final generated content
+                    _apply_contact_location(optimized_content, job_location)
                     
                     # Store in session state so it persists after rerun
                     st.session_state['optimized_content'] = optimized_content
                     st.session_state['optimization_report'] = report
                     st.session_state['optimization_done'] = True
                     st.session_state['last_job_description'] = job_description  # Store for cover letter
+                    st.session_state['last_job_location'] = job_location
                     
                     st.success("✅ **AI optimization complete!**")
                     
