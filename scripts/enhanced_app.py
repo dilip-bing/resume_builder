@@ -86,7 +86,10 @@ def _extract_job_location(job_description: str) -> str:
     # Case 1: "Location: San Jose"
     m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", job_description)
     if m and m.group(1).strip():
-        return m.group(1).strip()
+        loc = m.group(1).strip()
+        if any(k in loc.lower() for k in ("remote", "virtual", "hybrid")):
+            return ""
+        return loc
 
     # Case 2: multiline like:
     # Location:
@@ -99,7 +102,10 @@ def _extract_job_location(job_description: str) -> str:
             candidate = line.strip()
             if candidate:
                 # Keep it short-ish; avoid swallowing whole paragraphs
-                return candidate[:80]
+                loc = candidate[:80]
+                if any(k in loc.lower() for k in ("remote", "virtual", "hybrid")):
+                    return ""
+                return loc
     return ""
 
 
@@ -107,6 +113,8 @@ def _apply_contact_location(resume_content: dict, location: str) -> None:
     """Override the city/location in the resume contact line, if the template supports it."""
     location = (location or "").strip()
     if not location:
+        return
+    if any(k in location.lower() for k in ("remote", "virtual", "hybrid")):
         return
     try:
         contact = resume_content["personal"]["contact_line"]

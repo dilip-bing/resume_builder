@@ -240,6 +240,10 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
             except Exception:
                 requested_location = ""
 
+        # If the job is remote/virtual, keep the default template location (e.g., Binghamton, NY).
+        if requested_location and any(k in requested_location.lower() for k in ("remote", "virtual", "hybrid")):
+            requested_location = ""
+
         if requested_location:
             try:
                 contact = resume_content["personal"]["contact_line"]
