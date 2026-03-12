@@ -213,14 +213,38 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
         with open(RESUME_CONTENT_TEMPLATE, 'r', encoding='utf-8') as f:
             resume_content = json.load(f)
 
-        # Optional: override resume location to match job application location
-        if request.job_location:
+        # Optional: override resume location to match job application location.
+        # If `job_location` is not provided, try to extract it from the job description.
+        requested_location = (request.job_location or "").strip()
+        if not requested_location:
             try:
-                parts = resume_content["personal"]["contact_line"]["parts"]
-                parts["location"] = request.job_location.strip()
-                print(f"[API] Overriding contact location -> {parts['location']}")
+                import re
+
+                # Common patterns: "Location: San Jose", "Location:\nSan Jose", etc.
+                m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", request.job_description)
+                if m:
+                    requested_location = m.group(1).strip()
             except Exception:
-                print("[API] WARNING: Could not override location (template missing contact parts)")
+                requested_location = ""
+
+        if requested_location:
+            try:
+                contact = resume_content["personal"]["contact_line"]
+                parts = contact.get("parts", {})
+                if isinstance(parts, dict):
+                    parts["location"] = requested_location
+                    contact["parts"] = parts
+
+                    # Keep the string `value` consistent too (some consumers rely on it).
+                    phone = parts.get("phone", "")
+                    email = parts.get("email", "")
+                    linkedin = parts.get("linkedin", "")
+                    portfolio = parts.get("portfolio", "")
+                    contact["value"] = f"{parts['location']} | {phone} | {email} | {linkedin} | {portfolio}"
+
+                    print(f"[API] Using contact location -> {parts['location']}")
+            except Exception:
+                print("[API] WARNING: Could not set contact location (template missing contact structure)")
         
         # Initialize optimizer
         print(f"[API] Initializing Gemini optimizer...")
