@@ -220,10 +220,23 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
             try:
                 import re
 
-                # Common patterns: "Location: San Jose", "Location:\nSan Jose", etc.
+                # Case 1: "Location: San Jose"
                 m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", request.job_description)
-                if m:
+                if m and m.group(1).strip():
                     requested_location = m.group(1).strip()
+                else:
+                    # Case 2: multiline like:
+                    # Location:
+                    #
+                    # San Jose
+                    m2 = re.search(r"(?im)^\s*location\s*:\s*$", request.job_description)
+                    if m2:
+                        tail = request.job_description[m2.end() :]
+                        for line in tail.splitlines():
+                            candidate = line.strip()
+                            if candidate:
+                                requested_location = candidate[:80]
+                                break
             except Exception:
                 requested_location = ""
 
