@@ -82,9 +82,24 @@ def _extract_job_location(job_description: str) -> str:
     """Best-effort extraction of a job location from the job description text."""
     if not job_description:
         return ""
+
+    # Case 1: "Location: San Jose"
     m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", job_description)
-    if m:
+    if m and m.group(1).strip():
         return m.group(1).strip()
+
+    # Case 2: multiline like:
+    # Location:
+    #
+    # San Jose
+    m2 = re.search(r"(?im)^\s*location\s*:\s*$", job_description)
+    if m2:
+        tail = job_description[m2.end() :]
+        for line in tail.splitlines():
+            candidate = line.strip()
+            if candidate:
+                # Keep it short-ish; avoid swallowing whole paragraphs
+                return candidate[:80]
     return ""
 
 
