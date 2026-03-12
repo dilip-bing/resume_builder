@@ -46,6 +46,19 @@ def _normalize_first_location(location: str) -> str:
     if len(comma_parts) >= 4:
         loc = ", ".join(comma_parts[:2]).strip()
 
+    # Texas rule:
+    # - If location is only "Texas"/"TX" (or equivalent), use capital.
+    # - If it ends with " TX" without comma, normalize to ", TX".
+    low = loc.lower().strip()
+    if low in ("texas", "tx", "texas, usa", "tx, usa"):
+        loc = "Austin, TX"
+    elif __import__("re").fullmatch(r"(?i)tx\s*[-–—]?\s*usa", loc):
+        loc = "Austin, TX"
+    elif __import__("re").search(r"(?i)\btexas\b", loc) and "," not in loc and not __import__("re").search(r"(?i)\btx\b", loc):
+        loc = "Austin, TX"
+    elif __import__("re").search(r"(?i)\btx\b", loc) and "," not in loc:
+        loc = __import__("re").sub(r"(?i)\s+\btx\b", ", TX", loc).strip()
+
     return loc[:80]
 
 # Initialize FastAPI app

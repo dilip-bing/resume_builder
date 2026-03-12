@@ -7,6 +7,7 @@ import streamlit as st
 import json
 import copy
 import re
+import os
 from pathlib import Path
 try:
     from .enhanced_format_system import EnhancedFormatBuilder
@@ -155,6 +156,21 @@ def _normalize_first_location(location: str) -> str:
     if len(comma_parts) >= 4:
         loc = ", ".join(comma_parts[:2]).strip()
 
+    # Texas rule:
+    # - If location is only "Texas"/"TX" (or equivalent), use capital.
+    # - If it ends with " TX" without comma, normalize to ", TX".
+    low = loc.lower().strip()
+    if low in ("texas", "tx", "texas, usa", "tx, usa"):
+        loc = "Austin, TX"
+    elif re.fullmatch(r"(?i)tx\s*[-–—]?\s*usa", loc):
+        loc = "Austin, TX"
+    elif re.search(r"(?i)\btexas\b", loc) and "," not in loc and not re.search(r"(?i)\btx\b", loc):
+        # e.g., "Texas (USA)" -> Austin, TX
+        loc = "Austin, TX"
+    elif re.search(r"(?i)\btx\b", loc) and "," not in loc:
+        # e.g., "Austin TX" -> "Austin, TX"
+        loc = re.sub(r"(?i)\s+\btx\b", ", TX", loc).strip()
+
     return loc[:80]
 
 # Helper function to display character counter
@@ -200,6 +216,10 @@ def show_char_counter(prefix, current_text, field_key, original_text=""):
 # Title
 st.title("📄 Enhanced Resume Builder")
 st.markdown("**Complete format preservation using metadata system** | All formatting identical to original")
+
+# Visible build/version so you can confirm latest deploy
+APP_VERSION = os.getenv("APP_VERSION", "release")
+st.caption(f"Build: `{APP_VERSION}`")
 
 # Sidebar info
 with st.sidebar:
@@ -318,11 +338,16 @@ with tab_ai:
         )
 
         extracted_location = _extract_job_location(job_description)
+        # Auto-fill the field when user pastes a JD (Streamlit won't update `value=` once widget exists).
+        if extracted_location and not st.session_state.get("job_location"):
+            st.session_state["job_location"] = extracted_location
+
         job_location = st.text_input(
             "Job location (optional, used to update resume contact line):",
-            value=extracted_location,
+            value=st.session_state.get("job_location", ""),
+            key="job_location",
             placeholder="e.g., San Jose, CA",
-            help="If provided (or detected from 'Location:' in the job description), replaces the city in your resume contact line for this generated resume."
+            help="Auto-detected from 'Location:' in the job description. You can override it. If Remote/Hybrid/Virtual, leave it empty to keep Binghamton, NY."
         )
         
         # Optimization button
