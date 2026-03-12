@@ -97,12 +97,14 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
 # Request/Response models
 class OptimizeRequest(BaseModel):
     job_description: str
+    job_location: Optional[str] = None  # If provided, overrides resume contact location (e.g., "San Jose, CA")
     return_format: str = "file"  # "file" or "base64"
     
     class Config:
         json_schema_extra = {
             "example": {
                 "job_description": "We are looking for a Senior Software Engineer with experience in Python, React, AWS...",
+                "job_location": "San Jose, CA",
                 "return_format": "file"
             }
         }
@@ -210,6 +212,15 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
         print(f"[API] Loading template from: {RESUME_CONTENT_TEMPLATE}")
         with open(RESUME_CONTENT_TEMPLATE, 'r', encoding='utf-8') as f:
             resume_content = json.load(f)
+
+        # Optional: override resume location to match job application location
+        if request.job_location:
+            try:
+                parts = resume_content["personal"]["contact_line"]["parts"]
+                parts["location"] = request.job_location.strip()
+                print(f"[API] Overriding contact location -> {parts['location']}")
+            except Exception:
+                print("[API] WARNING: Could not override location (template missing contact parts)")
         
         # Initialize optimizer
         print(f"[API] Initializing Gemini optimizer...")
