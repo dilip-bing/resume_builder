@@ -86,7 +86,7 @@ def _extract_job_location(job_description: str) -> str:
     # Case 1: "Location: San Jose"
     m = re.search(r"(?im)^\s*location\s*:\s*([^\n\r]+)", job_description)
     if m and m.group(1).strip():
-        loc = m.group(1).strip()
+        loc = _normalize_first_location(m.group(1).strip())
         if any(k in loc.lower() for k in ("remote", "virtual", "hybrid")):
             return ""
         return loc
@@ -102,7 +102,7 @@ def _extract_job_location(job_description: str) -> str:
             candidate = line.strip()
             if candidate:
                 # Keep it short-ish; avoid swallowing whole paragraphs
-                loc = candidate[:80]
+                loc = _normalize_first_location(candidate[:80])
                 if any(k in loc.lower() for k in ("remote", "virtual", "hybrid")):
                     return ""
                 return loc
@@ -111,7 +111,7 @@ def _extract_job_location(job_description: str) -> str:
 
 def _apply_contact_location(resume_content: dict, location: str) -> None:
     """Override the city/location in the resume contact line, if the template supports it."""
-    location = (location or "").strip()
+    location = _normalize_first_location((location or "").strip())
     if not location:
         return
     if any(k in location.lower() for k in ("remote", "virtual", "hybrid")):
@@ -132,6 +132,30 @@ def _apply_contact_location(resume_content: dict, location: str) -> None:
         contact["value"] = f"{parts['location']} | {phone} | {email} | {linkedin} | {portfolio}"
     except Exception:
         return
+
+
+def _normalize_first_location(location: str) -> str:
+    """Pick the first location if multiple are listed in one string."""
+    loc = (location or "").strip()
+    if not loc:
+        return ""
+
+    for sep in ("|", "/", ";", "•"):
+        if sep in loc:
+            loc = loc.split(sep, 1)[0].strip()
+            break
+
+    for sep in (" or ", " and "):
+        if sep in loc.lower():
+            idx = loc.lower().find(sep)
+            loc = loc[:idx].strip()
+            break
+
+    comma_parts = [p.strip() for p in loc.split(",")]
+    if len(comma_parts) >= 4:
+        loc = ", ".join(comma_parts[:2]).strip()
+
+    return loc[:80]
 
 # Helper function to display character counter
 def show_char_counter(prefix, current_text, field_key, original_text=""):

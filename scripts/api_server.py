@@ -21,6 +21,33 @@ from .gemini_optimizer import GeminiATSOptimizer
 from .enhanced_format_system import EnhancedFormatBuilder
 from .cover_letter_generator import CoverLetterGenerator
 
+
+def _normalize_first_location(location: str) -> str:
+    """Pick the first location if multiple are listed in one string."""
+    loc = (location or "").strip()
+    if not loc:
+        return ""
+
+    # Common multi-location separators
+    for sep in ("|", "/", ";", "•"):
+        if sep in loc:
+            loc = loc.split(sep, 1)[0].strip()
+            break
+
+    # Text separators
+    for sep in (" or ", " and "):
+        if sep in loc.lower():
+            idx = loc.lower().find(sep)
+            loc = loc[:idx].strip()
+            break
+
+    # Commas: preserve "City, ST" but handle "City, ST, City2, ST"
+    comma_parts = [p.strip() for p in loc.split(",")]
+    if len(comma_parts) >= 4:
+        loc = ", ".join(comma_parts[:2]).strip()
+
+    return loc[:80]
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Resume Optimizer API",
@@ -241,6 +268,8 @@ async def optimize_resume(request: OptimizeRequest, api_key: str = Depends(verif
                 requested_location = ""
 
         # If the job is remote/virtual, keep the default template location (e.g., Binghamton, NY).
+        requested_location = _normalize_first_location(requested_location)
+
         if requested_location and any(k in requested_location.lower() for k in ("remote", "virtual", "hybrid")):
             requested_location = ""
 
