@@ -393,18 +393,27 @@ with tab_ai:
             help="The more complete the job description, the better the optimization"
         )
 
-        extracted_location = _extract_job_location(job_description)
-        # Auto-fill the field when user pastes a JD (Streamlit won't update `value=` once widget exists).
-        if extracted_location and not st.session_state.get("job_location"):
-            st.session_state["job_location"] = extracted_location
+        # Personal location override (same behavior/style as Personal tab location input)
+        if "ai_personal_location" not in st.session_state:
+            default_ai_location = ""
+            try:
+                default_ai_location = (
+                    resume_data.get("personal", {})
+                    .get("contact_line", {})
+                    .get("parts", {})
+                    .get("location", "")
+                )
+            except Exception:
+                default_ai_location = ""
+            st.session_state["ai_personal_location"] = default_ai_location
 
-        job_location = st.text_input(
-            "Job location (optional, used to update resume contact line):",
-            value=st.session_state.get("job_location", ""),
-            key="job_location",
-            placeholder="e.g., San Jose, CA",
-            help="Auto-detected from 'Location:' in the job description. You can override it. If Remote/Hybrid/Virtual, leave it empty to keep Binghamton, NY."
+        ai_personal_location = st.text_input(
+            "Location",
+            value=st.session_state.get("ai_personal_location", ""),
+            key="ai_personal_location",
+            help="City, State"
         )
+        show_char_counter("", ai_personal_location, "ai_personal_location")
         
         # Optimization button
         st.markdown("### 🎯 Step 2: Optimize Resume")
@@ -425,7 +434,7 @@ with tab_ai:
                     st.write("📝 **Starting AI optimization...**")
                     
                     resume_content_for_opt = copy.deepcopy(resume_data)
-                    _apply_contact_location(resume_content_for_opt, job_location)
+                    _apply_contact_location(resume_content_for_opt, ai_personal_location)
 
                     # Run optimization
                     optimized_content, report = optimizer.optimize_resume(
@@ -434,14 +443,14 @@ with tab_ai:
                     )
 
                     # Ensure location override is reflected in the final generated content
-                    _apply_contact_location(optimized_content, job_location)
+                    _apply_contact_location(optimized_content, ai_personal_location)
                     
                     # Store in session state so it persists after rerun
                     st.session_state['optimized_content'] = optimized_content
                     st.session_state['optimization_report'] = report
                     st.session_state['optimization_done'] = True
                     st.session_state['last_job_description'] = job_description  # Store for cover letter
-                    st.session_state['last_job_location'] = job_location
+                    st.session_state['last_job_location'] = ai_personal_location
                     
                     st.success("✅ **AI optimization complete!**")
                     
