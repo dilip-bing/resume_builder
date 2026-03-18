@@ -1,6 +1,7 @@
 streamlit
 python-docx
 docx2pdf
+pywin32; platform_system == "Windows"
 Pillow
 google-generativeai
 fastapi
