@@ -646,9 +646,9 @@ with tab_ai:
             
             col1, col2, col3 = st.columns(3)
             with col1:
-                # Generate Word-exact output button - always available
-                if st.button("📄 Regenerate Resume (Word-Exact)", use_container_width=True, type="secondary", key="regen_pdf_btn"):
-                    with st.spinner("Generating resume (Word-exact output)..."):
+                # Regenerate resume output - DOCX only
+                if st.button("📄 Regenerate Resume DOCX", use_container_width=True, type="secondary", key="regen_pdf_btn"):
+                    with st.spinner("Generating resume DOCX..."):
                         # Priority order: applied_content > optimized_content > file
                         # This ensures it works on both local and Streamlit Cloud
                         if 'applied_content' in st.session_state:
@@ -676,8 +676,8 @@ with tab_ai:
                             
                             # Show what content is being used
                             skills_preview = content_to_use.get('skills', {}).get('languages', {}).get('value', 'N/A')
-                            print(f"[PDF GENERATION] Source: {source}")
-                            print(f"[PDF GENERATION] Skills.languages: {skills_preview[:80]}...")
+                            print(f"[DOCX GENERATION] Source: {source}")
+                            print(f"[DOCX GENERATION] Skills.languages: {skills_preview[:80]}...")
                             
                             st.info(f"📝 Using content from: **{source}**")
                             
@@ -690,27 +690,10 @@ with tab_ai:
                             builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                             result = builder.build_resume_from_json(content_to_use, temp_path)
 
-                            # Always provide DOCX. Also provide PDF when conversion succeeds.
+                            # DOCX-only output
                             with open(result, "rb") as f:
                                 resume_docx_bytes = f.read()
-
-                            resume_pdf_bytes = None
-                            pdf_error_msg = ""
-                            if _supports_word_exact_pdf():
-                                try:
-                                    resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                                except Exception as exact_error:
-                                    pdf_error_msg = str(exact_error)
-                            else:
-                                pdf_error_msg = "Exact PDF requires Microsoft Word-based conversion, which is unavailable on this Linux deployment."
-
-                            if resume_pdf_bytes:
-                                st.success("✅ Resume generated successfully! Exact PDF is ready.")
-                            else:
-                                st.warning("⚠️ Exact PDF is unavailable on this deployment. DOCX is available below with exact formatting.")
-                                st.caption("To get exact PDF, open the downloaded DOCX in Microsoft Word and export as PDF.")
-                                if pdf_error_msg:
-                                    st.caption(f"Converter details: {pdf_error_msg}")
+                            st.success("✅ Resume generated successfully!")
                             
                             # Clean up temp file
                             try:
@@ -718,37 +701,20 @@ with tab_ai:
                             except:
                                 pass
                             
-                            # Provide both download options
-                            dl_col1, dl_col2 = st.columns(2)
-                            with dl_col1:
-                                st.download_button(
-                                    label="⬇️ Download Resume DOCX",
-                                    data=resume_docx_bytes,
-                                    file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
-                                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                    use_container_width=True,
-                                    key=f"download_optimized_docx_{timestamp}"
-                                )
-                            with dl_col2:
-                                if resume_pdf_bytes:
-                                    st.download_button(
-                                        label="⬇️ Download Resume PDF",
-                                        data=resume_pdf_bytes,
-                                        file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
-                                        mime="application/pdf",
-                                        use_container_width=True,
-                                        key=f"download_optimized_pdf_{timestamp}"
-                                    )
-                                else:
-                                    st.info("PDF unavailable")
+                            st.download_button(
+                                label="⬇️ Download Resume DOCX",
+                                data=resume_docx_bytes,
+                                file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                use_container_width=True,
+                                key=f"download_optimized_docx_{timestamp}"
+                            )
                             
                             # Store resume in session for cover letter generation
-                            st.session_state['last_generated_resume'] = resume_pdf_bytes if resume_pdf_bytes else resume_docx_bytes
-                            st.session_state['last_generated_resume_ext'] = 'pdf' if resume_pdf_bytes else 'docx'
+                            st.session_state['last_generated_resume'] = resume_docx_bytes
+                            st.session_state['last_generated_resume_ext'] = 'docx'
                             st.session_state['last_generated_resume_docx'] = resume_docx_bytes
-                            if resume_pdf_bytes:
-                                st.session_state['last_generated_resume_pdf'] = resume_pdf_bytes
-                            elif 'last_generated_resume_pdf' in st.session_state:
+                            if 'last_generated_resume_pdf' in st.session_state:
                                 del st.session_state['last_generated_resume_pdf']
                             st.session_state['last_resume_timestamp'] = timestamp
                             
@@ -760,7 +726,7 @@ with tab_ai:
             with col2:
                 # Download optimized JSON
                 if st.button("💾 Download Optimized JSON", use_container_width=True, type="secondary"):
-                    # Use same priority as PDF generation: applied > optimized > original
+                    # Use same priority as resume generation: applied > optimized > original
                     if 'applied_content' in st.session_state:
                         content_to_download = st.session_state['applied_content']
                     elif 'optimized_content' in st.session_state:
@@ -915,17 +881,9 @@ with tab_ai:
                                     st.session_state['last_generated_resume_docx']
                                 )
 
-                            # Add resume PDF if available
-                            if 'last_generated_resume_pdf' in st.session_state:
-                                zip_file.writestr(
-                                    f"resume_dilip_kumar_tc_{resume_ts}.pdf",
-                                    st.session_state['last_generated_resume_pdf']
-                                )
-
                             # Backward compatibility for older session state
-                            if ('last_generated_resume_docx' not in st.session_state and
-                                'last_generated_resume_pdf' not in st.session_state):
-                                resume_ext = st.session_state.get('last_generated_resume_ext', 'pdf')
+                            if 'last_generated_resume_docx' not in st.session_state:
+                                resume_ext = st.session_state.get('last_generated_resume_ext', 'docx')
                                 zip_file.writestr(
                                     f"resume_dilip_kumar_tc_{resume_ts}.{resume_ext}",
                                     st.session_state['last_generated_resume']
@@ -971,19 +929,19 @@ with tab_ai:
                         print(f"[INFO] Could not write to file (read-only filesystem on cloud): {e}")
                     
                     # CRITICAL: Save optimized content to persistent session state
-                    # This ensures it's available for PDF generation even on cloud
+                    # This ensures it's available for DOCX generation even on cloud
                     st.session_state['applied_content'] = optimized_content
                     
                     # Show appropriate success message
                     if file_saved:
-                        st.success("✅ Resume content saved locally and ready for PDF generation!")
+                        st.success("✅ Resume content saved locally and ready for DOCX generation!")
                     else:
-                        st.success("✅ Resume content ready for PDF generation! (Cloud mode - using session storage)")
+                        st.success("✅ Resume content ready for DOCX generation! (Cloud mode - using session storage)")
                     
                     # Keep optimization results visible but mark as applied
                     st.session_state['optimization_applied'] = True
                     
-                    st.info("💡 **Success!** Use 'Regenerate Resume PDF' button above to download your optimized resume.")
+                    st.info("💡 **Success!** Use 'Regenerate Resume DOCX' button above to download your optimized resume.")
                     # Note: Removed st.rerun() so results stay visible
                 
                 if violations:
@@ -1528,27 +1486,10 @@ with col2:
                 builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                 result = builder.build_resume_from_json(final_data, temp_path)
 
-                # Always provide DOCX. Also provide PDF when conversion succeeds.
+                # DOCX-only output
                 with open(result, "rb") as f:
                     resume_docx_bytes = f.read()
-
-                resume_pdf_bytes = None
-                pdf_error_msg = ""
-                if _supports_word_exact_pdf():
-                    try:
-                        resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                    except Exception as exact_error:
-                        pdf_error_msg = str(exact_error)
-                else:
-                    pdf_error_msg = "Exact PDF requires Microsoft Word-based conversion, which is unavailable on this Linux deployment."
-
-                if resume_pdf_bytes:
-                    st.success("✅ Resume generated successfully! Exact PDF is ready.")
-                else:
-                    st.warning("⚠️ Exact PDF is unavailable on this deployment. DOCX is available below with exact formatting.")
-                    st.caption("To get exact PDF, open the downloaded DOCX in Microsoft Word and export as PDF.")
-                    if pdf_error_msg:
-                        st.caption(f"Converter details: {pdf_error_msg}")
+                st.success("✅ Resume generated successfully!")
                 
                 # Clean up temp file
                 try:
@@ -1556,36 +1497,19 @@ with col2:
                 except:
                     pass
                 
-                # Download buttons with both output formats
-                dl_col1, dl_col2 = st.columns(2)
-                with dl_col1:
-                    st.download_button(
-                        label="⬇️ Download Resume DOCX",
-                        data=resume_docx_bytes,
-                        file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        use_container_width=True,
-                        key=f"download_resume_docx_{timestamp}"
-                    )
-                with dl_col2:
-                    if resume_pdf_bytes:
-                        st.download_button(
-                            label="⬇️ Download Resume PDF",
-                            data=resume_pdf_bytes,
-                            file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
-                            mime="application/pdf",
-                            use_container_width=True,
-                            key=f"download_resume_pdf_{timestamp}"
-                        )
-                    else:
-                        st.info("PDF unavailable")
+                st.download_button(
+                    label="⬇️ Download Resume DOCX",
+                    data=resume_docx_bytes,
+                    file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    use_container_width=True,
+                    key=f"download_resume_docx_{timestamp}"
+                )
 
-                st.session_state['last_generated_resume'] = resume_pdf_bytes if resume_pdf_bytes else resume_docx_bytes
-                st.session_state['last_generated_resume_ext'] = 'pdf' if resume_pdf_bytes else 'docx'
+                st.session_state['last_generated_resume'] = resume_docx_bytes
+                st.session_state['last_generated_resume_ext'] = 'docx'
                 st.session_state['last_generated_resume_docx'] = resume_docx_bytes
-                if resume_pdf_bytes:
-                    st.session_state['last_generated_resume_pdf'] = resume_pdf_bytes
-                elif 'last_generated_resume_pdf' in st.session_state:
+                if 'last_generated_resume_pdf' in st.session_state:
                     del st.session_state['last_generated_resume_pdf']
                 st.session_state['last_resume_timestamp'] = timestamp
                 
