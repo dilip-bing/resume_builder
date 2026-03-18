@@ -5,6 +5,7 @@ Respects character limits to prevent text overflow
 """
 
 import json
+import re
 from typing import Dict, List, Tuple, Optional
 import streamlit as st
 try:
@@ -279,7 +280,7 @@ class GeminiATSOptimizer:
             )
         limits_info = "\n".join(limit_lines)
         
-        prompt = f"""You are an expert ATS (Applicant Tracking System) resume optimizer. Your PRIMARY goal is to achieve 95%+ keyword match using an ADDITIVE strategy - ADD keywords to existing content, don't replace unless necessary.
+        prompt = f"""You are an expert ATS (Applicant Tracking System) resume optimizer. Your PRIMARY goal is to improve keyword match while keeping every project and leadership point authentic, relevant, and human-written.
 
 JOB DESCRIPTION:
 {job_description}
@@ -317,13 +318,22 @@ until you reach the 90–95% range without crossing the hard maximum.
 
 2. **TECH STACKS MUST HAVE ADDED KEYWORDS** (professional[].tech_stack, projects[].tech_stack)
    - ADDITIVE STRATEGY: Keep existing tech + add new from job description
+    - Never insert tools/platforms that are irrelevant to the project title and bullet context
+    - Project tech stacks must remain tied to what that specific project actually sounds like it used
    - Add ALL relevant technologies missing from current value
    - This is critical for ATS keyword matching
    - Stay under character limits - prioritize most important keywords
 
 3. **Bullet point optimization** (lower priority - only if space allows)
    - ADD keywords naturally to existing text
-   - Maintain core achievements and quantifiable metrics
+    - Maintain core achievements and quantifiable metrics
+    - Do NOT rewrite the whole idea; preserve the original intent and evidence
+
+4. **AUTHENTICITY + RELEVANCE GUARDRAILS**
+    - For projects and leadership bullets, make minimal edits first; prefer light keyword insertion over full rewrites
+    - If a keyword cannot be added naturally without making the line fake or forced, leave the original line unchanged
+    - Keep tone human and credible; avoid buzzword stuffing
+    - Keep each bullet directly relevant to its own project/leadership title
 
 YOUR TASK:
 
@@ -399,23 +409,24 @@ STEP 2: **ADDITIVE KEYWORD STRATEGY** - ADD TO EXISTING, DON'T REPLACE:
        - Job mentions: "Node.js, PostgreSQL, Redis, AWS, Kubernetes"  
        - Result: "React, MongoDB, Docker, Node.js, PostgreSQL, Redis, AWS, Kubernetes"
 
-   >>> THIRD PRIORITY - BULLET POINTS - KEYWORD ENHANCEMENT <<<
+     >>> THIRD PRIORITY - BULLET POINTS - KEYWORD ENHANCEMENT <<<
    - **professional[].bullets, projects[].bullets, leadership[].bullets**
      * Keep core achievements and metrics (numbers, percentages)
-     * ADD job keywords naturally into existing sentences
+         * ADD job keywords naturally into existing sentences
      * Rephrase to include more job-specific terminology
      * Do NOT remove quantifiable achievements
-     * Target: 60-70% text preservation with keyword enhancement
+         * Target: 85-95% text preservation for projects/leadership bullets
+         * For each bullet: preserve key nouns/verbs from original and add only relevant terms
 
-   [DO] Additional Rules:
-   - ATS MATCH SCORE IS PRIORITY #1 - aim for 95%+ keyword coverage
-   - Extract and use 80-100+ keywords from job description
+    [DO] Additional Rules:
+    - Balance ATS optimization with authenticity and project relevance
+    - Extract and use job keywords, but only when they fit naturally with the specific bullet/project
    - Skills sections MUST have added keywords (visible expansion)
-   - Target 60-70% text preservation for bullet points (aggressive keyword insertion)
-   - Replace generic phrases with keyword-rich equivalents
-   - Use EXACT terminology from job posting (copy-paste keywords)
+    - Target 85-95% text preservation for projects/leadership bullets
+    - Prefer selective keyword insertion instead of aggressive rewriting
+    - Use terminology from the job posting only where contextually valid
    - Keep quantifiable metrics and numbers from original text
-   - Character limits have 20% buffer - use every available character for keywords
+    - If relevance is weak, keep original content unchanged
 
    [DO NOT TOUCH] FORBIDDEN - CRITICAL:
    - **education[] - DO NOT MODIFY AT ALL**
@@ -431,6 +442,8 @@ STEP 2: **ADDITIVE KEYWORD STRATEGY** - ADD TO EXISTING, DON'T REPLACE:
    - DO NOT remove quantifiable achievements (numbers, percentages, metrics)
    - DO NOT change company names or dates
    - DO NOT add completely new experience that doesn't exist
+    - DO NOT inject irrelevant tech stacks into projects (example: unrelated CRM/tool in unrelated project)
+    - DO NOT turn realistic bullets into generic AI-sounding claims
    - *** NEVER EXCEED CHARACTER LIMITS - this breaks resume formatting!
    - DO NOT create new skill categories (like "web_design", "frameworks", "design_tools")
    - ONLY use the existing three skill fields: languages, software, tools
@@ -532,14 +545,14 @@ STEP 4: **Return your response** in this EXACT format:
 
 REMEMBER: Your success is measured by:
 1. [REQUIRED] Skills sections MUST be modified (if unchanged, you failed!)
-2. [REQUIRED] 95%+ keyword match score
+2. [REQUIRED] Strong keyword coverage WITHOUT sacrificing authenticity
 3. [REQUIRED] ALL fields STRICTLY under character limits - AIM 5-10 CHARS BELOW MAXIMUM!
    - The limits shown already have a 25% safety buffer applied
    - If you go over even by 1 character, you FAILED
    - Do NOT push to the limit - stay comfortably under
    - When in doubt, remove keywords to stay under limit
-4. [REQUIRED] 70-80% text preservation in bullet points
-5. [REQUIRED] Authentic achievements and metrics maintained
+4. [REQUIRED] 85-95% text preservation in projects/leadership bullets
+5. [REQUIRED] Authentic achievements, metrics, and project relevance maintained
 
 *** ZERO TOLERANCE FOR CHARACTER LIMIT VIOLATIONS ***
 *** AIM FOR 5-10 CHARACTERS BELOW EACH LIMIT ***
@@ -547,6 +560,38 @@ REMEMBER: Your success is measured by:
 Return ONLY valid JSON. No explanations before or after."""
 
         return prompt
+
+    def _is_semantically_drifted(self, original_text: str, optimized_text: str, min_token_retention: float = 0.35) -> bool:
+        """Return True when rewritten text drifts too far from original meaning.
+
+        Uses lightweight lexical checks to prevent over-rewrites that look fake.
+        """
+        if not isinstance(original_text, str) or not isinstance(optimized_text, str):
+            return True
+
+        original_clean = original_text.strip()
+        optimized_clean = optimized_text.strip()
+
+        if not optimized_clean:
+            return True
+
+        original_tokens = {t for t in re.findall(r"[a-zA-Z0-9+#.-]+", original_clean.lower()) if len(t) > 2}
+        optimized_tokens = {t for t in re.findall(r"[a-zA-Z0-9+#.-]+", optimized_clean.lower()) if len(t) > 2}
+
+        if original_tokens:
+            retained = len(original_tokens & optimized_tokens) / len(original_tokens)
+            if retained < min_token_retention:
+                return True
+
+        # Preserve numeric evidence (metrics, counts, percentages) where present.
+        original_numbers = re.findall(r"\d+(?:\.\d+)?%?", original_clean)
+        optimized_numbers = set(re.findall(r"\d+(?:\.\d+)?%?", optimized_clean))
+        if original_numbers:
+            kept_numbers = sum(1 for n in original_numbers if n in optimized_numbers)
+            if kept_numbers == 0:
+                return True
+
+        return False
 
     
     def _parse_ai_response(self, response_text: str, original_resume: Dict) -> Tuple[Dict, Dict]:
@@ -691,7 +736,11 @@ Return ONLY valid JSON. No explanations before or after."""
                     if 'tech_stack' in opt_proj:
                         if isinstance(opt_proj['tech_stack'], str):
                             if 'tech_stack' in orig_proj and isinstance(orig_proj['tech_stack'], dict):
-                                orig_proj['tech_stack']['value'] = opt_proj['tech_stack']
+                                original_value = orig_proj['tech_stack'].get('value', '')
+                                if self._is_semantically_drifted(original_value, opt_proj['tech_stack'], min_token_retention=0.25):
+                                    print(f"   [AUTH] Preserving original projects[{idx}].tech_stack due to relevance drift")
+                                else:
+                                    orig_proj['tech_stack']['value'] = opt_proj['tech_stack']
                             else:
                                 orig_proj['tech_stack'] = {
                                     'value': opt_proj['tech_stack'],
@@ -699,7 +748,12 @@ Return ONLY valid JSON. No explanations before or after."""
                                 }
                         elif isinstance(opt_proj['tech_stack'], dict) and 'value' in opt_proj['tech_stack']:
                             if 'tech_stack' in orig_proj and isinstance(orig_proj['tech_stack'], dict):
-                                orig_proj['tech_stack']['value'] = opt_proj['tech_stack']['value']
+                                original_value = orig_proj['tech_stack'].get('value', '')
+                                candidate_value = opt_proj['tech_stack']['value']
+                                if self._is_semantically_drifted(original_value, candidate_value, min_token_retention=0.25):
+                                    print(f"   [AUTH] Preserving original projects[{idx}].tech_stack due to relevance drift")
+                                else:
+                                    orig_proj['tech_stack']['value'] = candidate_value
                     
                     # Update bullets but preserve paragraph_index
                     if 'bullets' in opt_proj and isinstance(opt_proj['bullets'], list):
@@ -708,7 +762,11 @@ Return ONLY valid JSON. No explanations before or after."""
                                 orig_bullet = orig_proj['bullets'][bullet_idx]
                                 if isinstance(opt_bullet, str):
                                     if isinstance(orig_bullet, dict):
-                                        orig_bullet['value'] = opt_bullet
+                                        original_value = orig_bullet.get('value', '')
+                                        if self._is_semantically_drifted(original_value, opt_bullet, min_token_retention=0.35):
+                                            print(f"   [AUTH] Preserving original projects[{idx}].bullets[{bullet_idx}] due to intent drift")
+                                        else:
+                                            orig_bullet['value'] = opt_bullet
                                     else:
                                         orig_proj['bullets'][bullet_idx] = {
                                             'value': opt_bullet,
@@ -716,7 +774,11 @@ Return ONLY valid JSON. No explanations before or after."""
                                         }
                                 elif isinstance(opt_bullet, dict) and 'value' in opt_bullet:
                                     if isinstance(orig_bullet, dict):
-                                        orig_bullet['value'] = opt_bullet['value']
+                                        original_value = orig_bullet.get('value', '')
+                                        if self._is_semantically_drifted(original_value, opt_bullet['value'], min_token_retention=0.35):
+                                            print(f"   [AUTH] Preserving original projects[{idx}].bullets[{bullet_idx}] due to intent drift")
+                                        else:
+                                            orig_bullet['value'] = opt_bullet['value']
         
         # Merge leadership - preserve paragraph_index metadata
         if 'leadership' in optimized and isinstance(optimized['leadership'], list):
@@ -731,7 +793,11 @@ Return ONLY valid JSON. No explanations before or after."""
                                 orig_bullet = orig_lead['bullets'][bullet_idx]
                                 if isinstance(opt_bullet, str):
                                     if isinstance(orig_bullet, dict):
-                                        orig_bullet['value'] = opt_bullet
+                                        original_value = orig_bullet.get('value', '')
+                                        if self._is_semantically_drifted(original_value, opt_bullet, min_token_retention=0.35):
+                                            print(f"   [AUTH] Preserving original leadership[{idx}].bullets[{bullet_idx}] due to intent drift")
+                                        else:
+                                            orig_bullet['value'] = opt_bullet
                                     else:
                                         orig_lead['bullets'][bullet_idx] = {
                                             'value': opt_bullet,
@@ -739,7 +805,11 @@ Return ONLY valid JSON. No explanations before or after."""
                                         }
                                 elif isinstance(opt_bullet, dict) and 'value' in opt_bullet:
                                     if isinstance(orig_bullet, dict):
-                                        orig_bullet['value'] = opt_bullet['value']
+                                        original_value = orig_bullet.get('value', '')
+                                        if self._is_semantically_drifted(original_value, opt_bullet['value'], min_token_retention=0.35):
+                                            print(f"   [AUTH] Preserving original leadership[{idx}].bullets[{bullet_idx}] due to intent drift")
+                                        else:
+                                            orig_bullet['value'] = opt_bullet['value']
         
         print(f"   [MERGE] Skills metadata preserved: {list(merged.get('skills', {}).keys())}")
         
