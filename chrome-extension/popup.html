@@ -2,18 +2,182 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Resume & Cover Letter Generator</title>
+  <title>ATS Resume Assistant</title>
   <style>
-    body { font-family: Arial, sans-serif; width: 320px; margin: 0; padding: 16px; }
-    button { width: 100%; padding: 12px; font-size: 16px; margin-top: 12px; }
-    #result { margin-top: 16px; }
-    .download-link { display: block; margin-top: 8px; }
+    :root {
+      --bg: #f4f7f8;
+      --panel: #ffffff;
+      --text: #1e2a2f;
+      --muted: #5f6f76;
+      --primary: #0b6e4f;
+      --primary-dark: #095940;
+      --secondary: #dce7eb;
+      --border: #c8d8de;
+      --warn: #8a5b00;
+      --error: #8b1f2f;
+      --ok: #146c2e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      width: 420px;
+      margin: 0;
+      padding: 14px;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(145deg, #edf4f6 0%, #f7fafb 100%);
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(16, 39, 46, 0.08);
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .hint {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 6px 0 4px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 13px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea { resize: vertical; min-height: 150px; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--secondary); color: #18313a; }
+    .btn-secondary:hover { background: #cfdde2; }
+
+    .full-btn { margin-top: 8px; }
+
+    #status {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      display: none;
+    }
+
+    #status.ok { display: block; background: #e8f6eb; color: var(--ok); }
+    #status.warn { display: block; background: #fff4de; color: var(--warn); }
+    #status.error { display: block; background: #fdecef; color: var(--error); }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: #1f3942;
+      margin-bottom: 8px;
+    }
+
+    .char-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
-  <h2>Resume & Cover Letter Generator</h2>
-  <button id="generateBtn">Generate Resume & Cover Letter</button>
-  <div id="result"></div>
+  <div class="card">
+    <h2>ATS Resume Assistant</h2>
+    <p class="hint">Reads job description from the active page. Override manually if needed.</p>
+
+    <h3>Step 1: Job Description</h3>
+    <label for="jobDescription">Paste the complete job posting here:</label>
+    <textarea id="jobDescription" placeholder="Auto-filled from current page when possible..."></textarea>
+    <div id="charMeta" class="char-meta">0 characters</div>
+
+    <div class="row">
+      <button id="extractBtn" class="btn-secondary">Extract From Page</button>
+      <button id="clearBtn" class="btn-secondary">Clear</button>
+    </div>
+
+    <h3 style="margin-top:10px;">Personal</h3>
+    <label for="personalLocation">Location</label>
+    <input id="personalLocation" type="text" placeholder="City, State" />
+
+    <button id="optimizeBtn" class="btn-primary full-btn">Optimize + Download Resume (DOCX)</button>
+    <button id="coverLetterBtn" class="btn-secondary full-btn">Generate + Download Cover Letter</button>
+
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Settings</summary>
+      <label for="apiBase">API Base URL</label>
+      <input id="apiBase" type="text" placeholder="https://your-api-host" />
+
+      <label for="apiKey">API Key</label>
+      <input id="apiKey" type="password" placeholder="X-API-Key" />
+
+      <label for="applicantName">Applicant Name</label>
+      <input id="applicantName" type="text" placeholder="Your Name" />
+
+      <label for="applicantEmail">Applicant Email</label>
+      <input id="applicantEmail" type="text" placeholder="name@example.com" />
+
+      <label for="applicantPhone">Applicant Phone</label>
+      <input id="applicantPhone" type="text" placeholder="+1 555 555 5555" />
+
+      <label for="coverContext">Cover Letter Context</label>
+      <input id="coverContext" type="text" placeholder="Additional context for cover letter" />
+
+      <button id="saveSettingsBtn" class="btn-primary full-btn">Save Settings</button>
+    </details>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>
