@@ -177,38 +177,85 @@ def _normalize_first_location(location: str) -> str:
 def _convert_docx_to_pdf_bytes(docx_path: str) -> bytes:
     """Convert a DOCX file to PDF and return PDF bytes.
 
-    Uses `docx2pdf` first, then falls back to MS Word COM on Windows.
+    Conversion strategy:
+    1) docx2pdf (best on Windows/macOS with MS Word)
+    2) LibreOffice CLI (Linux/Cloud): soffice --headless --convert-to pdf
+    3) MS Word COM on Windows
     """
+    import shutil
+    import subprocess
     import tempfile
 
     pdf_path = None
+    conversion_errors = []
+    source_docx = str(Path(docx_path).resolve())
+
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as pdf_tmp:
             pdf_path = pdf_tmp.name
 
-        # Primary converter
+        # 1) Primary converter: docx2pdf (works on Windows/macOS with Word)
         try:
             from docx2pdf import convert as docx2pdf_convert
-            docx2pdf_convert(str(Path(docx_path)), str(Path(pdf_path)))
+            docx2pdf_convert(source_docx, str(Path(pdf_path).resolve()))
         except Exception as docx2pdf_error:
-            # Fallback: native Word automation on Windows
+            conversion_errors.append(f"docx2pdf: {docx2pdf_error}")
+
+        if pdf_path and Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 0:
+            with open(pdf_path, "rb") as f:
+                return f.read()
+
+        # 2) Linux/Cloud fallback: LibreOffice headless conversion
+        converter_bin = shutil.which("soffice") or shutil.which("libreoffice")
+        if converter_bin:
             try:
-                import win32com.client  # type: ignore
+                with tempfile.TemporaryDirectory() as out_dir:
+                    cmd = [
+                        converter_bin,
+                        "--headless",
+                        "--convert-to",
+                        "pdf:writer_pdf_Export",
+                        "--outdir",
+                        out_dir,
+                        source_docx,
+                    ]
+                    proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
-                word = win32com.client.DispatchEx("Word.Application")
-                word.Visible = False
-                doc = word.Documents.Open(str(Path(docx_path).resolve()))
-                doc.SaveAs(str(Path(pdf_path).resolve()), FileFormat=17)  # 17 = wdFormatPDF
-                doc.Close(False)
-                word.Quit()
-            except Exception as com_error:
-                raise RuntimeError(
-                    "PDF conversion failed. Install docx2pdf (preferred) or ensure Microsoft Word is available. "
-                    f"docx2pdf error: {docx2pdf_error}; COM error: {com_error}"
-                )
+                    converted_pdf = Path(out_dir) / f"{Path(source_docx).stem}.pdf"
+                    if converted_pdf.exists() and converted_pdf.stat().st_size > 0:
+                        with open(converted_pdf, "rb") as f:
+                            return f.read()
 
-        with open(pdf_path, "rb") as f:
-            return f.read()
+                    conversion_errors.append(
+                        "libreoffice: conversion command succeeded but PDF was not created"
+                    )
+                    if proc.stderr:
+                        conversion_errors.append(f"libreoffice stderr: {proc.stderr.strip()}")
+            except Exception as libreoffice_error:
+                conversion_errors.append(f"libreoffice: {libreoffice_error}")
+
+        # 3) Windows fallback: native Word automation
+        try:
+            import win32com.client  # type: ignore
+
+            word = win32com.client.DispatchEx("Word.Application")
+            word.Visible = False
+            doc = word.Documents.Open(source_docx)
+            doc.SaveAs(str(Path(pdf_path).resolve()), FileFormat=17)  # 17 = wdFormatPDF
+            doc.Close(False)
+            word.Quit()
+        except Exception as com_error:
+            conversion_errors.append(f"win32com: {com_error}")
+
+        if pdf_path and Path(pdf_path).exists() and Path(pdf_path).stat().st_size > 0:
+            with open(pdf_path, "rb") as f:
+                return f.read()
+
+        raise RuntimeError(
+            "PDF conversion failed. On Streamlit/Linux, install LibreOffice via packages.txt. "
+            "On Windows, install Microsoft Word (for docx2pdf/win32com). "
+            f"Details: {'; '.join(conversion_errors)}"
+        )
     finally:
         if pdf_path:
             try:
