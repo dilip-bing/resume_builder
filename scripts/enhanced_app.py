@@ -8,6 +8,7 @@ import json
 import copy
 import re
 import os
+import sys
 from pathlib import Path
 try:
     from .enhanced_format_system import EnhancedFormatBuilder
@@ -228,6 +229,11 @@ def _convert_docx_to_pdf_bytes(docx_path: str) -> bytes:
                 Path(pdf_path).unlink()
             except Exception:
                 pass
+
+
+def _supports_word_exact_pdf() -> bool:
+    """Return True only on runtimes where Word-based PDF engines are viable."""
+    return os.name == "nt" or sys.platform == "darwin"
 
 # Helper function to display character counter
 def show_char_counter(prefix, current_text, field_key, original_text=""):
@@ -658,22 +664,31 @@ with tab_ai:
                             download_name = ""
                             download_mime = ""
                             downloaded_ext = ""
-                            try:
-                                resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                                download_bytes = resume_pdf_bytes
-                                download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
-                                download_mime = "application/pdf"
-                                downloaded_ext = "pdf"
-                                st.success("✅ Resume generated successfully (Word-exact PDF)!" )
-                            except Exception as pdf_error:
+                            if _supports_word_exact_pdf():
+                                try:
+                                    resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
+                                    download_bytes = resume_pdf_bytes
+                                    download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
+                                    download_mime = "application/pdf"
+                                    downloaded_ext = "pdf"
+                                    st.success("✅ Resume generated successfully (Word-exact PDF)!" )
+                                except Exception as pdf_error:
+                                    with open(result, "rb") as f:
+                                        resume_docx_bytes = f.read()
+                                    download_bytes = resume_docx_bytes
+                                    download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
+                                    download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    downloaded_ext = "docx"
+                                    st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
+                                    st.caption(f"Converter details: {pdf_error}")
+                            else:
                                 with open(result, "rb") as f:
                                     resume_docx_bytes = f.read()
                                 download_bytes = resume_docx_bytes
                                 download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
                                 download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                 downloaded_ext = "docx"
-                                st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
-                                st.caption(f"Converter details: {pdf_error}")
+                                st.info("ℹ️ This environment does not support Word-based PDF export. Download DOCX for exact layout and export to PDF in Microsoft Word.")
                             
                             # Clean up temp file
                             try:
@@ -1461,22 +1476,31 @@ with col2:
                 download_name = ""
                 download_mime = ""
                 downloaded_ext = ""
-                try:
-                    resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                    download_bytes = resume_pdf_bytes
-                    download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
-                    download_mime = "application/pdf"
-                    downloaded_ext = "pdf"
-                    st.success("✅ Resume generated successfully (Word-exact PDF)!" )
-                except Exception as pdf_error:
+                if _supports_word_exact_pdf():
+                    try:
+                        resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
+                        download_bytes = resume_pdf_bytes
+                        download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
+                        download_mime = "application/pdf"
+                        downloaded_ext = "pdf"
+                        st.success("✅ Resume generated successfully (Word-exact PDF)!" )
+                    except Exception as pdf_error:
+                        with open(result, "rb") as f:
+                            resume_docx_bytes = f.read()
+                        download_bytes = resume_docx_bytes
+                        download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
+                        download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        downloaded_ext = "docx"
+                        st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
+                        st.caption(f"Converter details: {pdf_error}")
+                else:
                     with open(result, "rb") as f:
                         resume_docx_bytes = f.read()
                     download_bytes = resume_docx_bytes
                     download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
                     download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     downloaded_ext = "docx"
-                    st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
-                    st.caption(f"Converter details: {pdf_error}")
+                    st.info("ℹ️ This environment does not support Word-based PDF export. Download DOCX for exact layout and export to PDF in Microsoft Word.")
                 
                 # Clean up temp file
                 try:
