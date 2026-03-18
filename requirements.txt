@@ -1,5 +1,6 @@
 streamlit
 python-docx
+docx2pdf
 Pillow
 google-generativeai
 fastapi

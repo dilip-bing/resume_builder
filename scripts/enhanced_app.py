@@ -173,6 +173,49 @@ def _normalize_first_location(location: str) -> str:
 
     return loc[:80]
 
+
+def _convert_docx_to_pdf_bytes(docx_path: str) -> bytes:
+    """Convert a DOCX file to PDF and return PDF bytes.
+
+    Uses `docx2pdf` first, then falls back to MS Word COM on Windows.
+    """
+    import tempfile
+
+    pdf_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as pdf_tmp:
+            pdf_path = pdf_tmp.name
+
+        # Primary converter
+        try:
+            from docx2pdf import convert as docx2pdf_convert
+            docx2pdf_convert(str(Path(docx_path)), str(Path(pdf_path)))
+        except Exception as docx2pdf_error:
+            # Fallback: native Word automation on Windows
+            try:
+                import win32com.client  # type: ignore
+
+                word = win32com.client.DispatchEx("Word.Application")
+                word.Visible = False
+                doc = word.Documents.Open(str(Path(docx_path).resolve()))
+                doc.SaveAs(str(Path(pdf_path).resolve()), FileFormat=17)  # 17 = wdFormatPDF
+                doc.Close(False)
+                word.Quit()
+            except Exception as com_error:
+                raise RuntimeError(
+                    "PDF conversion failed. Install docx2pdf (preferred) or ensure Microsoft Word is available. "
+                    f"docx2pdf error: {docx2pdf_error}; COM error: {com_error}"
+                )
+
+        with open(pdf_path, "rb") as f:
+            return f.read()
+    finally:
+        if pdf_path:
+            try:
+                Path(pdf_path).unlink()
+            except Exception:
+                pass
+
 # Helper function to display character counter
 def show_char_counter(prefix, current_text, field_key, original_text=""):
     """Display adaptive character counter with visual feedback.
@@ -561,6 +604,12 @@ with tab_ai:
                             with open(RESUME_CONTENT_JSON, 'r', encoding='utf-8') as f:
                                 content_to_use = json.load(f)
                             source = "file (no optimization)"
+
+                        # Always apply current Personal tab edits for this generated file only.
+                        # This keeps edits (e.g., Location) visible in output without saving permanently.
+                        content_to_use = copy.deepcopy(content_to_use)
+                        if edited_data.get("personal"):
+                            content_to_use["personal"] = copy.deepcopy(edited_data["personal"])
                         
                         try:
                             # Generate timestamp for unique filename
@@ -581,10 +630,9 @@ with tab_ai:
                             # Build resume using EnhancedFormatBuilder
                             builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                             result = builder.build_resume_from_json(content_to_use, temp_path)
-                            
-                            # Read the generated file into memory
-                            with open(result, "rb") as f:
-                                resume_bytes = f.read()
+
+                            # Convert generated DOCX to PDF for final download
+                            resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
                             
                             # Clean up temp file
                             try:
@@ -598,15 +646,16 @@ with tab_ai:
                             # Provide download button with in-memory data
                             st.download_button(
                                 label="⬇️ Download Resume",
-                                data=resume_bytes,
-                                file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
-                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                data=resume_pdf_bytes,
+                                file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
+                                mime="application/pdf",
                                 use_container_width=True,
                                 key=f"download_optimized_{timestamp}"
                             )
                             
                             # Store resume in session for cover letter generation
-                            st.session_state['last_generated_resume'] = resume_bytes
+                            st.session_state['last_generated_resume'] = resume_pdf_bytes
+                            st.session_state['last_generated_resume_ext'] = 'pdf'
                             st.session_state['last_resume_timestamp'] = timestamp
                             
                         except Exception as e:
@@ -766,8 +815,9 @@ with tab_ai:
                         
                         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                             # Add resume
+                            resume_ext = st.session_state.get('last_generated_resume_ext', 'pdf')
                             zip_file.writestr(
-                                f"resume_dilip_kumar_tc_{resume_ts}.docx",
+                                f"resume_dilip_kumar_tc_{resume_ts}.{resume_ext}",
                                 st.session_state['last_generated_resume']
                             )
                             # Add cover letter
@@ -1332,11 +1382,11 @@ with col2:
                 # Don't merge with edited_data from tabs (tabs show old cached values)
                 # User can refresh page after Apply to see optimized values in tabs
                 if 'applied_content' in st.session_state:
-                    final_data = current_resume_data  # Use AI-optimized content directly
+                    final_data = copy.deepcopy(current_resume_data)  # Use AI-optimized content directly
                     print("[GENERATE] Using AI-optimized content WITHOUT tab merge (tabs show old cached data)")
                 else:
                     # Merge with edited_data from tabs (only when no AI optimization)
-                    final_data = current_resume_data.copy()
+                    final_data = copy.deepcopy(current_resume_data)
                     
                     # Merge edited data from tabs if any fields were edited
                     if edited_data.get("personal"):
@@ -1353,6 +1403,11 @@ with col2:
                         final_data["leadership"] = edited_data["leadership"]
                     
                     print("[GENERATE] Using file content WITH tab edits merged")
+
+                # Ensure current Personal tab edits are reflected in this generated resume only.
+                # This does not persist anything to templates/resume_content.json.
+                if edited_data.get("personal"):
+                    final_data["personal"] = copy.deepcopy(edited_data["personal"])
                 
                 # Create temp file for generation
                 import tempfile
@@ -1362,10 +1417,9 @@ with col2:
                 # Build resume
                 builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                 result = builder.build_resume_from_json(final_data, temp_path)
-                
-                # Read the generated file into memory
-                with open(result, "rb") as f:
-                    resume_bytes = f.read()
+
+                # Convert generated DOCX to PDF for final download
+                resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
                 
                 # Clean up temp file
                 try:
@@ -1379,12 +1433,16 @@ with col2:
                 # Download button with in-memory data
                 st.download_button(
                     label="⬇️ Download Resume",
-                    data=resume_bytes,
-                    file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    data=resume_pdf_bytes,
+                    file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
+                    mime="application/pdf",
                     use_container_width=True,
                     key=f"download_resume_{timestamp}"
                 )
+
+                st.session_state['last_generated_resume'] = resume_pdf_bytes
+                st.session_state['last_generated_resume_ext'] = 'pdf'
+                st.session_state['last_resume_timestamp'] = timestamp
                 
             except Exception as e:
                 st.error(f"❌ Error generating resume: {str(e)}")
