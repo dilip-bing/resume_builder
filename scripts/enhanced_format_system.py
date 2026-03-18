@@ -14,6 +14,7 @@ from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
 from docx.oxml.ns import qn
 import json
+import re
 import shutil
 import zipfile
 from typing import Dict, Any
@@ -403,6 +404,28 @@ class EnhancedFormatBuilder:
                     z.writestr(name, read_as_bytes[name])
         except Exception:
             pass  # Non-fatal: resume still saved
+
+    def _remove_document_protection(self, docx_path: str) -> None:
+        """Remove read-only protection so generated DOCX remains editable."""
+        try:
+            with zipfile.ZipFile(docx_path, "r") as z:
+                settings_xml = z.read("word/settings.xml").decode("utf-8")
+                names = z.namelist()
+                read_as_bytes = {name: z.read(name) for name in names}
+
+            # Remove self-closing and paired documentProtection tags if present.
+            updated_xml = re.sub(r"<w:documentProtection[^>]*/>", "", settings_xml)
+            updated_xml = re.sub(r"<w:documentProtection[^>]*>.*?</w:documentProtection>", "", updated_xml, flags=re.DOTALL)
+
+            if updated_xml == settings_xml:
+                return
+
+            read_as_bytes["word/settings.xml"] = updated_xml.encode("utf-8")
+            with zipfile.ZipFile(docx_path, "w", zipfile.ZIP_DEFLATED) as z:
+                for name in names:
+                    z.writestr(name, read_as_bytes[name])
+        except Exception:
+            pass  # Non-fatal: resume still saved
     
     def build_resume_from_json(self, json_data: Dict[str, Any], output_path: str = "output/resume.docx") -> str:
         """
@@ -703,8 +726,8 @@ class EnhancedFormatBuilder:
         # Save
         target_doc.save(output_path)
         
-        # Lock document (read-only) so first page layout is protected
-        self._apply_document_protection(output_path)
+        # Ensure generated output is editable in Word.
+        self._remove_document_protection(output_path)
         
         print(f"\n[OK] Resume generated: {output_path}")
         print(f"[STATS] Edits applied: {len(changes)}")
