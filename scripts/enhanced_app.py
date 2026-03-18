@@ -235,6 +235,37 @@ def _supports_word_exact_pdf() -> bool:
     """Return True only on runtimes where Word-based PDF engines are viable."""
     return os.name == "nt" or sys.platform == "darwin"
 
+
+def _convert_docx_to_pdf_libreoffice(docx_path: str) -> bytes:
+    """Convert DOCX to PDF using LibreOffice (Linux-friendly fallback)."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    source_docx = str(Path(docx_path).resolve())
+    converter_bin = shutil.which("soffice") or shutil.which("libreoffice")
+    if not converter_bin:
+        raise RuntimeError("LibreOffice binary not found (expected 'soffice' or 'libreoffice').")
+
+    with tempfile.TemporaryDirectory() as out_dir:
+        cmd = [
+            converter_bin,
+            "--headless",
+            "--convert-to",
+            "pdf:writer_pdf_Export",
+            "--outdir",
+            out_dir,
+            source_docx,
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
+
+        converted_pdf = Path(out_dir) / f"{Path(source_docx).stem}.pdf"
+        if not converted_pdf.exists() or converted_pdf.stat().st_size == 0:
+            raise RuntimeError(f"LibreOffice did not produce a PDF. stderr: {proc.stderr.strip()}")
+
+        with open(converted_pdf, "rb") as f:
+            return f.read()
+
 # Helper function to display character counter
 def show_char_counter(prefix, current_text, field_key, original_text=""):
     """Display adaptive character counter with visual feedback.
@@ -659,36 +690,36 @@ with tab_ai:
                             builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                             result = builder.build_resume_from_json(content_to_use, temp_path)
 
-                            # Prefer Word-exact PDF. If unavailable, download DOCX to preserve exact layout.
-                            download_bytes = b""
-                            download_name = ""
-                            download_mime = ""
-                            downloaded_ext = ""
+                            # Always provide DOCX. Also provide PDF when conversion succeeds.
+                            with open(result, "rb") as f:
+                                resume_docx_bytes = f.read()
+
+                            resume_pdf_bytes = None
+                            pdf_method = ""
+                            pdf_error_msg = ""
                             if _supports_word_exact_pdf():
                                 try:
                                     resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                                    download_bytes = resume_pdf_bytes
-                                    download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
-                                    download_mime = "application/pdf"
-                                    downloaded_ext = "pdf"
-                                    st.success("✅ Resume generated successfully (Word-exact PDF)!" )
-                                except Exception as pdf_error:
-                                    with open(result, "rb") as f:
-                                        resume_docx_bytes = f.read()
-                                    download_bytes = resume_docx_bytes
-                                    download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
-                                    download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                    downloaded_ext = "docx"
-                                    st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
-                                    st.caption(f"Converter details: {pdf_error}")
+                                    pdf_method = "Word-exact"
+                                except Exception as exact_error:
+                                    try:
+                                        resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
+                                        pdf_method = "LibreOffice fallback"
+                                    except Exception as libre_error:
+                                        pdf_error_msg = f"Word: {exact_error}; LibreOffice: {libre_error}"
                             else:
-                                with open(result, "rb") as f:
-                                    resume_docx_bytes = f.read()
-                                download_bytes = resume_docx_bytes
-                                download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
-                                download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                downloaded_ext = "docx"
-                                st.info("ℹ️ This environment does not support Word-based PDF export. Download DOCX for exact layout and export to PDF in Microsoft Word.")
+                                try:
+                                    resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
+                                    pdf_method = "LibreOffice"
+                                except Exception as libre_error:
+                                    pdf_error_msg = str(libre_error)
+
+                            if resume_pdf_bytes:
+                                st.success(f"✅ Resume generated successfully! PDF created via {pdf_method}.")
+                            else:
+                                st.warning("⚠️ PDF conversion failed in this environment. DOCX is available below.")
+                                if pdf_error_msg:
+                                    st.caption(f"Converter details: {pdf_error_msg}")
                             
                             # Clean up temp file
                             try:
@@ -696,19 +727,38 @@ with tab_ai:
                             except:
                                 pass
                             
-                            # Provide download button with in-memory data
-                            st.download_button(
-                                label="⬇️ Download Resume",
-                                data=download_bytes,
-                                file_name=download_name,
-                                mime=download_mime,
-                                use_container_width=True,
-                                key=f"download_optimized_{timestamp}"
-                            )
+                            # Provide both download options
+                            dl_col1, dl_col2 = st.columns(2)
+                            with dl_col1:
+                                st.download_button(
+                                    label="⬇️ Download Resume DOCX",
+                                    data=resume_docx_bytes,
+                                    file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
+                                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    use_container_width=True,
+                                    key=f"download_optimized_docx_{timestamp}"
+                                )
+                            with dl_col2:
+                                if resume_pdf_bytes:
+                                    st.download_button(
+                                        label="⬇️ Download Resume PDF",
+                                        data=resume_pdf_bytes,
+                                        file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
+                                        mime="application/pdf",
+                                        use_container_width=True,
+                                        key=f"download_optimized_pdf_{timestamp}"
+                                    )
+                                else:
+                                    st.info("PDF unavailable")
                             
                             # Store resume in session for cover letter generation
-                            st.session_state['last_generated_resume'] = download_bytes
-                            st.session_state['last_generated_resume_ext'] = downloaded_ext
+                            st.session_state['last_generated_resume'] = resume_pdf_bytes if resume_pdf_bytes else resume_docx_bytes
+                            st.session_state['last_generated_resume_ext'] = 'pdf' if resume_pdf_bytes else 'docx'
+                            st.session_state['last_generated_resume_docx'] = resume_docx_bytes
+                            if resume_pdf_bytes:
+                                st.session_state['last_generated_resume_pdf'] = resume_pdf_bytes
+                            elif 'last_generated_resume_pdf' in st.session_state:
+                                del st.session_state['last_generated_resume_pdf']
                             st.session_state['last_resume_timestamp'] = timestamp
                             
                         except Exception as e:
@@ -867,12 +917,28 @@ with tab_ai:
                         cover_ts = st.session_state.get('last_cover_letter_timestamp', datetime.now().strftime("%Y%m%d_%H%M%S"))
                         
                         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                            # Add resume
-                            resume_ext = st.session_state.get('last_generated_resume_ext', 'pdf')
-                            zip_file.writestr(
-                                f"resume_dilip_kumar_tc_{resume_ts}.{resume_ext}",
-                                st.session_state['last_generated_resume']
-                            )
+                            # Add resume DOCX (always available when generated)
+                            if 'last_generated_resume_docx' in st.session_state:
+                                zip_file.writestr(
+                                    f"resume_dilip_kumar_tc_{resume_ts}.docx",
+                                    st.session_state['last_generated_resume_docx']
+                                )
+
+                            # Add resume PDF if available
+                            if 'last_generated_resume_pdf' in st.session_state:
+                                zip_file.writestr(
+                                    f"resume_dilip_kumar_tc_{resume_ts}.pdf",
+                                    st.session_state['last_generated_resume_pdf']
+                                )
+
+                            # Backward compatibility for older session state
+                            if ('last_generated_resume_docx' not in st.session_state and
+                                'last_generated_resume_pdf' not in st.session_state):
+                                resume_ext = st.session_state.get('last_generated_resume_ext', 'pdf')
+                                zip_file.writestr(
+                                    f"resume_dilip_kumar_tc_{resume_ts}.{resume_ext}",
+                                    st.session_state['last_generated_resume']
+                                )
                             # Add cover letter
                             zip_file.writestr(
                                 f"cover_letter_dilip_kumar_{cover_ts}.docx",
@@ -1471,36 +1537,36 @@ with col2:
                 builder = EnhancedFormatBuilder(ORIGINAL_RESUME, FORMAT_METADATA_JSON)
                 result = builder.build_resume_from_json(final_data, temp_path)
 
-                # Prefer Word-exact PDF. If unavailable, download DOCX to preserve exact layout.
-                download_bytes = b""
-                download_name = ""
-                download_mime = ""
-                downloaded_ext = ""
+                # Always provide DOCX. Also provide PDF when conversion succeeds.
+                with open(result, "rb") as f:
+                    resume_docx_bytes = f.read()
+
+                resume_pdf_bytes = None
+                pdf_method = ""
+                pdf_error_msg = ""
                 if _supports_word_exact_pdf():
                     try:
                         resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                        download_bytes = resume_pdf_bytes
-                        download_name = f"resume_dilip_kumar_tc_{timestamp}.pdf"
-                        download_mime = "application/pdf"
-                        downloaded_ext = "pdf"
-                        st.success("✅ Resume generated successfully (Word-exact PDF)!" )
-                    except Exception as pdf_error:
-                        with open(result, "rb") as f:
-                            resume_docx_bytes = f.read()
-                        download_bytes = resume_docx_bytes
-                        download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
-                        download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        downloaded_ext = "docx"
-                        st.warning("⚠️ Word-exact PDF conversion is unavailable here. Downloading DOCX to preserve exact font and spacing. Export this DOCX to PDF using Microsoft Word.")
-                        st.caption(f"Converter details: {pdf_error}")
+                        pdf_method = "Word-exact"
+                    except Exception as exact_error:
+                        try:
+                            resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
+                            pdf_method = "LibreOffice fallback"
+                        except Exception as libre_error:
+                            pdf_error_msg = f"Word: {exact_error}; LibreOffice: {libre_error}"
                 else:
-                    with open(result, "rb") as f:
-                        resume_docx_bytes = f.read()
-                    download_bytes = resume_docx_bytes
-                    download_name = f"resume_dilip_kumar_tc_{timestamp}.docx"
-                    download_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    downloaded_ext = "docx"
-                    st.info("ℹ️ This environment does not support Word-based PDF export. Download DOCX for exact layout and export to PDF in Microsoft Word.")
+                    try:
+                        resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
+                        pdf_method = "LibreOffice"
+                    except Exception as libre_error:
+                        pdf_error_msg = str(libre_error)
+
+                if resume_pdf_bytes:
+                    st.success(f"✅ Resume generated successfully! PDF created via {pdf_method}.")
+                else:
+                    st.warning("⚠️ PDF conversion failed in this environment. DOCX is available below.")
+                    if pdf_error_msg:
+                        st.caption(f"Converter details: {pdf_error_msg}")
                 
                 # Clean up temp file
                 try:
@@ -1508,18 +1574,37 @@ with col2:
                 except:
                     pass
                 
-                # Download button with in-memory data
-                st.download_button(
-                    label="⬇️ Download Resume",
-                    data=download_bytes,
-                    file_name=download_name,
-                    mime=download_mime,
-                    use_container_width=True,
-                    key=f"download_resume_{timestamp}"
-                )
+                # Download buttons with both output formats
+                dl_col1, dl_col2 = st.columns(2)
+                with dl_col1:
+                    st.download_button(
+                        label="⬇️ Download Resume DOCX",
+                        data=resume_docx_bytes,
+                        file_name=f"resume_dilip_kumar_tc_{timestamp}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        key=f"download_resume_docx_{timestamp}"
+                    )
+                with dl_col2:
+                    if resume_pdf_bytes:
+                        st.download_button(
+                            label="⬇️ Download Resume PDF",
+                            data=resume_pdf_bytes,
+                            file_name=f"resume_dilip_kumar_tc_{timestamp}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True,
+                            key=f"download_resume_pdf_{timestamp}"
+                        )
+                    else:
+                        st.info("PDF unavailable")
 
-                st.session_state['last_generated_resume'] = download_bytes
-                st.session_state['last_generated_resume_ext'] = downloaded_ext
+                st.session_state['last_generated_resume'] = resume_pdf_bytes if resume_pdf_bytes else resume_docx_bytes
+                st.session_state['last_generated_resume_ext'] = 'pdf' if resume_pdf_bytes else 'docx'
+                st.session_state['last_generated_resume_docx'] = resume_docx_bytes
+                if resume_pdf_bytes:
+                    st.session_state['last_generated_resume_pdf'] = resume_pdf_bytes
+                elif 'last_generated_resume_pdf' in st.session_state:
+                    del st.session_state['last_generated_resume_pdf']
                 st.session_state['last_resume_timestamp'] = timestamp
                 
             except Exception as e:
