@@ -695,29 +695,20 @@ with tab_ai:
                                 resume_docx_bytes = f.read()
 
                             resume_pdf_bytes = None
-                            pdf_method = ""
                             pdf_error_msg = ""
                             if _supports_word_exact_pdf():
                                 try:
                                     resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                                    pdf_method = "Word-exact"
                                 except Exception as exact_error:
-                                    try:
-                                        resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
-                                        pdf_method = "LibreOffice fallback"
-                                    except Exception as libre_error:
-                                        pdf_error_msg = f"Word: {exact_error}; LibreOffice: {libre_error}"
+                                    pdf_error_msg = str(exact_error)
                             else:
-                                try:
-                                    resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
-                                    pdf_method = "LibreOffice"
-                                except Exception as libre_error:
-                                    pdf_error_msg = str(libre_error)
+                                pdf_error_msg = "Exact PDF requires Microsoft Word-based conversion, which is unavailable on this Linux deployment."
 
                             if resume_pdf_bytes:
-                                st.success(f"✅ Resume generated successfully! PDF created via {pdf_method}.")
+                                st.success("✅ Resume generated successfully! Exact PDF is ready.")
                             else:
-                                st.warning("⚠️ PDF conversion failed in this environment. DOCX is available below.")
+                                st.warning("⚠️ Exact PDF is unavailable on this deployment. DOCX is available below with exact formatting.")
+                                st.caption("To get exact PDF, open the downloaded DOCX in Microsoft Word and export as PDF.")
                                 if pdf_error_msg:
                                     st.caption(f"Converter details: {pdf_error_msg}")
                             
@@ -1542,29 +1533,20 @@ with col2:
                     resume_docx_bytes = f.read()
 
                 resume_pdf_bytes = None
-                pdf_method = ""
                 pdf_error_msg = ""
                 if _supports_word_exact_pdf():
                     try:
                         resume_pdf_bytes = _convert_docx_to_pdf_bytes(result)
-                        pdf_method = "Word-exact"
                     except Exception as exact_error:
-                        try:
-                            resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
-                            pdf_method = "LibreOffice fallback"
-                        except Exception as libre_error:
-                            pdf_error_msg = f"Word: {exact_error}; LibreOffice: {libre_error}"
+                        pdf_error_msg = str(exact_error)
                 else:
-                    try:
-                        resume_pdf_bytes = _convert_docx_to_pdf_libreoffice(result)
-                        pdf_method = "LibreOffice"
-                    except Exception as libre_error:
-                        pdf_error_msg = str(libre_error)
+                    pdf_error_msg = "Exact PDF requires Microsoft Word-based conversion, which is unavailable on this Linux deployment."
 
                 if resume_pdf_bytes:
-                    st.success(f"✅ Resume generated successfully! PDF created via {pdf_method}.")
+                    st.success("✅ Resume generated successfully! Exact PDF is ready.")
                 else:
-                    st.warning("⚠️ PDF conversion failed in this environment. DOCX is available below.")
+                    st.warning("⚠️ Exact PDF is unavailable on this deployment. DOCX is available below with exact formatting.")
+                    st.caption("To get exact PDF, open the downloaded DOCX in Microsoft Word and export as PDF.")
                     if pdf_error_msg:
                         st.caption(f"Converter details: {pdf_error_msg}")
                 
