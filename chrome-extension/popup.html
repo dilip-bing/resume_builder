@@ -21,7 +21,8 @@
     * { box-sizing: border-box; }
 
     body {
-      width: 420px;
+      width: 100%;
+      max-width: 100%;
       margin: 0;
       padding: 14px;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -131,7 +132,7 @@
 <body>
   <div class="card">
     <h2>ATS Resume Assistant</h2>
-    <p class="hint">Reads job description from the active page. Tip: highlight the main job description first for best accuracy on pages with multiple job cards.</p>
+    <p class="hint">Runs in Chrome Side Panel and stays open while switching tabs. Reads job description from the active page; full page capture is supported for scrollable listings.</p>
 
     <h3>Step 1: Job Description</h3>
     <label for="jobDescription">Paste the complete job posting here:</label>
