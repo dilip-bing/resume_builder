@@ -77,13 +77,50 @@ async function extractFromPage() {
     target: { tabId },
     func: () => {
       function extractJobDescription() {
+        const normalize = (txt) => (txt || '').replace(/\s+/g, ' ').trim();
+
+        function cleanMainDescription(rawText) {
+          if (!rawText) return '';
+
+          const lines = rawText
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter(Boolean);
+
+          const hardStopTerms = [
+            'similar jobs', 'related jobs', 'recommended jobs', 'jobs you may like',
+            'people also viewed', 'more jobs', 'job alerts', 'about the company',
+            'benefits', 'equal opportunity', 'privacy policy', 'terms of use',
+            'report this job', 'share this job'
+          ];
+
+          const noisyLineTerms = [
+            'save job', 'apply now', 'easy apply', 'follow company', 'posted',
+            'views', 'applicants', 'promoted', 'message the job poster'
+          ];
+
+          const kept = [];
+          for (const line of lines) {
+            const lower = line.toLowerCase();
+
+            if (hardStopTerms.some((t) => lower.includes(t))) break;
+            if (noisyLineTerms.some((t) => lower === t || lower.startsWith(`${t} `))) continue;
+            if (line.length < 3) continue;
+            if (line.includes('•') && line.length < 40) continue;
+
+            kept.push(line);
+          }
+
+          let text = kept.join('\n').trim();
+          if (text.length > 12000) text = text.slice(0, 12000);
+          return text;
+        }
+
         // 1) If user highlights the main JD text, always prefer that.
         const selectedText = (window.getSelection && window.getSelection().toString() || '').trim();
         if (selectedText.length > 200) {
-          return selectedText;
+           return cleanMainDescription(selectedText);
         }
-
-        const normalize = (txt) => (txt || '').replace(/\s+/g, ' ').trim();
 
         const positiveTerms = [
           'job description', 'responsibilities', 'requirements', 'qualifications',
@@ -161,7 +198,7 @@ async function extractFromPage() {
         let bestText = '';
         let bestScore = -9999;
         candidates.forEach((el) => {
-          const { score, text } = scoreElement(el);
+            const { score, text } = scoreElement(el);
           if (score > bestScore) {
             bestScore = score;
             bestText = text;
@@ -175,10 +212,12 @@ async function extractFromPage() {
             const txt = normalize(node.innerText || '');
             if (txt.length > maxText.length) maxText = txt;
           });
-          return maxText;
+            const title = normalize(document.querySelector('h1') && document.querySelector('h1').innerText || '');
+            return cleanMainDescription(`${title}\n${maxText}`);
         }
 
-        return bestText;
+          const title = normalize(document.querySelector('h1') && document.querySelector('h1').innerText || '');
+          return cleanMainDescription(`${title}\n${bestText}`);
       }
 
       return extractJobDescription();
