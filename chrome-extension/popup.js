@@ -77,6 +77,44 @@ async function extractFromPage() {
     target: { tabId },
     func: () => {
       function extractJobDescription() {
+        // Capture ALL page content - let AI filter out irrelevant details
+        const bodyText = document.body.innerText || document.body.textContent || '';
+        const pageContent = bodyText.trim();
+
+        // Get page title/heading as context
+        const title = (document.querySelector('h1') && document.querySelector('h1').innerText) || 
+                      (document.querySelector('title') && document.querySelector('title').innerText) || '';
+
+        // Combine title + full page content
+        const fullContent = `${title}\n\n${pageContent}`;
+
+        // Cap at reasonable size (AI can handle large content)
+        return fullContent.substring(0, 50000);
+      }
+
+      return extractJobDescription();
+    }
+  });
+
+  const jd = (result || '').trim();
+
+  if (!jd || jd.length < 120) {
+    showStatus('Could not get page content. Please paste manually.', 'warn');
+    return;
+  }
+
+  el.jobDescription.value = jd;
+  updateCharMeta();
+  showStatus('Full page content captured. AI will extract relevant job description.', 'ok');
+}
+
+// Old smart extraction function (kept for reference, no longer used)
+async function extractFromPageSmart_DEPRECATED() {
+  const tabId = await getActiveTabId();
+  const [{ result }] = await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      function extractJobDescription() {
         const normalize = (txt) => (txt || '').replace(/\s+/g, ' ').trim();
 
         function cleanMainDescription(rawText) {
@@ -308,8 +346,13 @@ async function optimizeAndDownloadResume() {
   setBusy(true);
   showStatus('Optimizing resume and generating DOCX...', 'ok');
   try {
+    // Add AI instruction to focus on job description and ignore irrelevant content
+    const aiInstruction = `IMPORTANT: The content below may include multiple job listings, company information, navigation text, sidebar content, and other irrelevant details. Please extract and focus ONLY on the main job title and job description. Ignore any other job listings, "similar jobs" sections, benefits, company background, or UI text. Extract ONLY the primary job opportunity.\n\n---JOB CONTENT START---\n`;
+    
+    const enhancedJobDescription = aiInstruction + jobDescription;
+
     const data = await callApi('/api/v1/optimize', {
-      job_description: jobDescription,
+      job_description: enhancedJobDescription,
       job_location: el.personalLocation.value.trim(),
       return_format: 'base64'
     });
