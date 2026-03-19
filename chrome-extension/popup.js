@@ -77,29 +77,108 @@ async function extractFromPage() {
     target: { tabId },
     func: () => {
       function extractJobDescription() {
-        const selectors = [
-          '[data-job-description]',
-          '.job-description',
-          '#jobDescriptionText',
-          'section[aria-label*="job description" i]',
-          'article',
-          'main',
-          'body'
-        ];
-
-        for (const sel of selectors) {
-          const node = document.querySelector(sel);
-          if (node && node.innerText && node.innerText.length > 120) {
-            return node.innerText.trim();
-          }
+        // 1) If user highlights the main JD text, always prefer that.
+        const selectedText = (window.getSelection && window.getSelection().toString() || '').trim();
+        if (selectedText.length > 200) {
+          return selectedText;
         }
 
-        let maxText = '';
-        document.querySelectorAll('p,div,section,article').forEach((node) => {
-          const txt = (node.innerText || '').trim();
-          if (txt.length > maxText.length) maxText = txt;
+        const normalize = (txt) => (txt || '').replace(/\s+/g, ' ').trim();
+
+        const positiveTerms = [
+          'job description', 'responsibilities', 'requirements', 'qualifications',
+          'minimum qualifications', 'preferred qualifications', 'what you will do',
+          'what you ll do', 'about the role', 'experience', 'skills', 'about this job'
+        ];
+        const negativeTerms = [
+          'similar jobs', 'related jobs', 'people also viewed', 'recommended jobs',
+          'jobs you may like', 'more jobs', 'search results', 'filters', 'saved jobs'
+        ];
+
+        function termHits(text, terms) {
+          const lower = text.toLowerCase();
+          let hits = 0;
+          for (const t of terms) {
+            if (lower.includes(t)) hits += 1;
+          }
+          return hits;
+        }
+
+        function elementSignal(el) {
+          const marker = `${el.id || ''} ${(el.className || '').toString()} ${el.getAttribute('aria-label') || ''}`.toLowerCase();
+          return /job|description|details|posting|jd/.test(marker) ? 1 : 0;
+        }
+
+        function scoreElement(el) {
+          const text = normalize(el.innerText || '');
+          if (text.length < 250) return { score: -9999, text };
+
+          const links = el.querySelectorAll('a').length;
+          const pos = termHits(text, positiveTerms);
+          const neg = termHits(text, negativeTerms);
+          const rect = el.getBoundingClientRect();
+
+          let score = 0;
+          score += Math.min(40, text.length / 250);         // enough detail
+          score += pos * 8;                                  // JD language present
+          score -= neg * 10;                                 // listing/reco language present
+          score += elementSignal(el) * 20;                   // id/class hints
+          score += Math.max(-20, 18 - links * 2);            // too many links => likely listing
+
+          // Main content tends to be wide and near center viewport.
+          if (rect.width > 450) score += 8;
+          if (rect.top >= -200 && rect.top <= 1400) score += 6;
+
+          const cx = rect.left + rect.width / 2;
+          if (cx > window.innerWidth * 0.2 && cx < window.innerWidth * 0.8) score += 5;
+
+          return { score, text };
+        }
+
+        const selectors = [
+          '[data-job-description]',
+          '[id*="jobDescription" i]',
+          '[class*="job-description" i]',
+          '[class*="jobDescription" i]',
+          '[class*="description" i]',
+          '[id*="description" i]',
+          'section[aria-label*="job description" i]',
+          'main',
+          'article'
+        ];
+
+        const candidates = new Set();
+        for (const sel of selectors) {
+          document.querySelectorAll(sel).forEach((el) => candidates.add(el));
+        }
+
+        // Add nearby likely containers without scanning every node on the page.
+        document.querySelectorAll('section, div').forEach((el) => {
+          const marker = `${el.id || ''} ${(el.className || '').toString()}`.toLowerCase();
+          if (/job|description|detail|posting/.test(marker)) candidates.add(el);
         });
-        return maxText;
+
+        let bestText = '';
+        let bestScore = -9999;
+        candidates.forEach((el) => {
+          const { score, text } = scoreElement(el);
+          if (score > bestScore) {
+            bestScore = score;
+            bestText = text;
+          }
+        });
+
+        // Fallback: largest readable block if scoring found nothing good.
+        if (bestText.length < 250) {
+          let maxText = '';
+          document.querySelectorAll('main, article, section').forEach((node) => {
+            const txt = normalize(node.innerText || '');
+            if (txt.length > maxText.length) maxText = txt;
+          });
+          return maxText;
+        }
+
+        return bestText;
       }
 
       return extractJobDescription();
