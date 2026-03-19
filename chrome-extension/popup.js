@@ -1,9 +1,9 @@
 const DEFAULT_SETTINGS = {
   apiBase: 'https://resume-optimizer-api-fvpd.onrender.com',
-  apiKey: '',
-  applicantName: 'Dilip Kumar',
-  applicantEmail: '',
-  applicantPhone: '',
+  apiKey: 'nFDqvbuNJb4dwsoL9E6HfyTaPC-O2oeHvK-y1RWDSGU',
+  applicantName: 'Dilip Kumar Thirukonda Chandrasekaran',
+  applicantEmail: 'dthirukondac@binghamton.edu',
+  applicantPhone: '(607) 624-9390',
   coverContext: 'Passionate about technology and eager to contribute to innovative projects',
   personalLocation: ''
 };
@@ -121,6 +121,14 @@ async function extractFromPage() {
 async function loadSettings() {
   const data = await chrome.storage.local.get('resumeExtSettings');
   settings = { ...DEFAULT_SETTINGS, ...(data.resumeExtSettings || {}) };
+
+  // If users previously saved empty strings, keep project defaults for critical fields.
+  if (!settings.apiBase || !settings.apiBase.trim()) settings.apiBase = DEFAULT_SETTINGS.apiBase;
+  if (!settings.apiKey || !settings.apiKey.trim()) settings.apiKey = DEFAULT_SETTINGS.apiKey;
+  if (!settings.applicantName || !settings.applicantName.trim()) settings.applicantName = DEFAULT_SETTINGS.applicantName;
+  if (!settings.applicantEmail || !settings.applicantEmail.trim()) settings.applicantEmail = DEFAULT_SETTINGS.applicantEmail;
+  if (!settings.applicantPhone || !settings.applicantPhone.trim()) settings.applicantPhone = DEFAULT_SETTINGS.applicantPhone;
+  if (!settings.coverContext || !settings.coverContext.trim()) settings.coverContext = DEFAULT_SETTINGS.coverContext;
 
   el.apiBase.value = settings.apiBase;
   el.apiKey.value = settings.apiKey;
