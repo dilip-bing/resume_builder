@@ -73,13 +73,40 @@ async function getActiveTabId() {
 
 async function extractFromPage() {
   const tabId = await getActiveTabId();
-  await chrome.scripting.executeScript({
+  const [{ result }] = await chrome.scripting.executeScript({
     target: { tabId },
-    files: ['content.js']
+    func: () => {
+      function extractJobDescription() {
+        const selectors = [
+          '[data-job-description]',
+          '.job-description',
+          '#jobDescriptionText',
+          'section[aria-label*="job description" i]',
+          'article',
+          'main',
+          'body'
+        ];
+
+        for (const sel of selectors) {
+          const node = document.querySelector(sel);
+          if (node && node.innerText && node.innerText.length > 120) {
+            return node.innerText.trim();
+          }
+        }
+
+        let maxText = '';
+        document.querySelectorAll('p,div,section,article').forEach((node) => {
+          const txt = (node.innerText || '').trim();
+          if (txt.length > maxText.length) maxText = txt;
+        });
+        return maxText;
+      }
+
+      return extractJobDescription();
+    }
   });
 
-  const response = await chrome.tabs.sendMessage(tabId, { action: 'getJobDescription' });
-  const jd = response && response.jobDescription ? response.jobDescription.trim() : '';
+  const jd = (result || '').trim();
 
   if (!jd || jd.length < 120) {
     showStatus('Could not confidently detect job description. Please paste manually.', 'warn');
